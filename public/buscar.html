@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Productos - API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">🔍 Buscador de Productos</h1>
+        <p class="text-gray-600 mb-6">Busca por código, descripción, ubicación o unidad de medida</p>
+        
+        <!-- Buscador -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex gap-3 mb-4">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="flex-1 border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="Escribe para buscar... (ej: rodamiento, A-3, PZ, GCN007)"
+                    autofocus>
+                <button 
+                    onclick="buscar()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold transition shadow-md">
+                    <svg class="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    Buscar
+                </button>
+            </div>
+
+            <!-- Ayuda -->
+            <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                <p class="text-sm text-blue-800">
+                    <strong>💡 Tip:</strong> La búsqueda encuentra coincidencias parciales en código, descripción, ubicación y unidad de medida.
+                    Por ejemplo: "rod" encuentra "Rodamiento", "007" encuentra códigos como "GCN0070001".
+                </p>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="hidden bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="animate-spin h-5 w-5 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-blue-700 font-medium">Buscando...</span>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div id="error" class="hidden bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+            <p class="text-red-700 font-medium">Error al buscar</p>
+            <p id="errorMsg" class="text-red-600 text-sm"></p>
+        </div>
+
+        <!-- No Results -->
+        <div id="noResults" class="hidden bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6">
+            <p class="text-yellow-700 font-medium">😕 No se encontraron resultados</p>
+            <p class="text-yellow-600 text-sm">Intenta con otros términos de búsqueda</p>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-700">Resultados</h2>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-600">
+                        Búsqueda: <strong id="searchTerm" class="text-blue-600"></strong>
+                    </span>
+                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold text-sm">
+                        <span id="totalResults">0</span> encontrados
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto border rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">UM</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Físico</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">P.U.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultTable" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- JSON Raw -->
+        <div id="jsonSection" class="hidden bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-bold text-gray-700">📄 JSON Response</h3>
+                <button onclick="copyJson()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded text-sm transition">
+                    Copiar
+                </button>
+            </div>
+            <pre id="jsonRaw" class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs"></pre>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8000/api/v1';
+        let lastResponse = null;
+
+        // Buscar al presionar Enter
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscar();
+            }
+        });
+
+        function hideAll() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+            document.getElementById('noResults').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('jsonSection').classList.add('hidden');
+        }
+
+        async function buscar() {
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (!query) {
+                alert('Por favor escribe algo para buscar');
+                return;
+            }
+
+            hideAll();
+            document.getElementById('loading').classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${BASE_URL}/productos/buscar?q=${encodeURIComponent(query)}&limit=50`);
+                const data = await response.json();
+                lastResponse = data;
+
+                hideAll();
+
+                if (data.total === 0) {
+                    document.getElementById('noResults').classList.remove('hidden');
+                } else {
+                    document.getElementById('results').classList.remove('hidden');
+                    document.getElementById('searchTerm').textContent = query;
+                    document.getElementById('totalResults').textContent = data.total;
+                    
+                    renderResults(data.data);
+                }
+
+                // Show JSON
+                document.getElementById('jsonSection').classList.remove('hidden');
+                document.getElementById('jsonRaw').textContent = JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                hideAll();
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('errorMsg').textContent = error.message;
+            }
+        }
+
+        function renderResults(productos) {
+            const tbody = document.getElementById('resultTable');
+            tbody.innerHTML = '';
+
+            productos.forEach((producto, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white hover:bg-blue-50' : 'bg-gray-50 hover:bg-blue-50';
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap font-mono text-sm font-bold text-blue-600">${producto.codigo}</td>
+                    <td class="px-4 py-3 text-sm">${highlightMatch(producto.descripcion)}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">${producto.ubicacion || '<span class="text-gray-400">S/U</span>'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-center">${producto.um || '-'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right">${producto.fisico || 0}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium">$${parseFloat(producto.pu || 0).toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function highlightMatch(text) {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query || !text) return text;
+
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark class="bg-yellow-200 px-1">$1</mark>');
+        }
+
+        function copyJson() {
+            const text = document.getElementById('jsonRaw').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('JSON copiado al portapapeles');
+            });
+        }
+
+        // Ejemplos de búsqueda
+        const ejemplos = [
+            'rodamiento',
+            'A-3',
+            'PZ',
+            'GCN007',
+            'placa'
+        ];
+
+        // Agregar sugerencias
+        window.addEventListener('load', () => {
+            const input = document.getElementById('searchInput');
+            const ejemploAleatorio = ejemplos[Math.floor(Math.random() * ejemplos.length)];
+            input.placeholder = `Escribe para buscar... Por ejemplo: "${ejemploAleatorio}"`;
+        });
+    </script>
+</body>
+</html>
