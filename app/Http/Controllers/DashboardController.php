@@ -8,38 +8,32 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $totalProductos = Producto::count();
         $productosStockBajo = Producto::where('cantidad_fisica', '<', 10)->count();
         $totalMovimientos = Movimiento::whereDate('created_at', today())->count();
-        
-        // Productos próximos a vencer (en los próximos 30 días)
-        $productosProximosVencer = Producto::whereNotNull('fecha_vencimiento')
-            ->whereBetween('fecha_vencimiento', [now(), now()->addDays(30)])
-            ->orderBy('fecha_vencimiento')
-            ->limit(10)
-            ->get();
-        
-        // Últimos movimientos
-        $ultimosMovimientos = Movimiento::with(['producto', 'usuario'])
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
-        
-        // Productos con stock bajo
-        $productosStockBajoDetalle = Producto::where('cantidad_fisica', '<', 10)
-            ->orderBy('cantidad_fisica')
-            ->limit(10)
-            ->get();
+
+        // Tabla principal con todos los productos
+        $query = Producto::with(['componente', 'categoria', 'familia', 'unidadMedida', 'ubicacion']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('codigo', 'like', "%{$search}%")
+                  ->orWhere('descripcion', 'like', "%{$search}%")
+                  ->orWhere('observaciones', 'like', "%{$search}%")
+                  ->orWhere('factura', 'like', "%{$search}%");
+            });
+        }
+
+        $productos = $query->orderBy('codigo')->paginate(50)->withQueryString();
 
         return view('dashboard', compact(
             'totalProductos',
             'productosStockBajo',
             'totalMovimientos',
-            'productosProximosVencer',
-            'ultimosMovimientos',
-            'productosStockBajoDetalle'
+            'productos'
         ));
     }
 }
