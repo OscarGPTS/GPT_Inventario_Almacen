@@ -11,6 +11,7 @@ class Solicitud extends Model
     protected $fillable = [
         'folio',
         'fecha',
+        'fecha_requerida',
         'solicitante',
         'departamento_id',
         'producto_id',
@@ -18,11 +19,13 @@ class Solicitud extends Model
         'unidad_medida_id',
         'observaciones',
         'estado',
+        'prioridad',
         'usuario_registro_id',
     ];
 
     protected $casts = [
-        'fecha' => 'date',
+        'fecha'           => 'date',
+        'fecha_requerida' => 'date',
     ];
 
     public function departamento()

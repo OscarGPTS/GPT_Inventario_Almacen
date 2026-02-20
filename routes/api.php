@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductoApiController;
 use App\Http\Controllers\Api\MovimientoApiController;
+use App\Http\Controllers\Api\CatalogoApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,10 @@ use App\Http\Controllers\Api\MovimientoApiController;
 // Rutas públicas (sin autenticación)
 Route::prefix('v1')->group(function () {
     
+    // Catálogos dinámicos (departamentos, unidades de medida)
+    Route::get('/departamentos/buscar', [CatalogoApiController::class, 'buscarDepartamentos']);
+    Route::get('/unidades-medida/buscar', [CatalogoApiController::class, 'buscarUnidades']);
+
     // Productos
     Route::get('/productos', [ProductoApiController::class, 'index'])->name('api.productos.index');
     Route::get('/productos/stats', [ProductoApiController::class, 'stats'])->name('api.productos.stats');
