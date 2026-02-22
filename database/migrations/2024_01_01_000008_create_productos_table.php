@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('productos', function (Blueprint $table) {
             $table->id();
-            $table->string('codigo', 50)->unique(); // TSL0160053
+            $table->string('codigo', 50); // TSL0160053
             $table->foreignId('componente_id')->constrained('componentes');
             $table->foreignId('categoria_id')->constrained('categorias');
             $table->foreignId('familia_id')->constrained('familias');
