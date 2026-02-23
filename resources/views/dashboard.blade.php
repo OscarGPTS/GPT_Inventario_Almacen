@@ -5,42 +5,330 @@
 @section('content')
 <div class="space-y-6">
 
-    {{-- Tarjetas resumen --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="rounded-xl p-5 text-white flex items-center gap-4 shadow" style="background-color:#4A568D;">
-            <div class="bg-white bg-opacity-20 rounded-lg p-3">
-                <svg width="25px" height="25px" viewBox="0 0 24 24" id="meteor-icon-kit__regular-inventory" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g clip-path="url(#clip0_525_147)">
-                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 1C2 0.447715 1.55228 0 1 0C0.447715 0 0 0.447715 0 1V23C0 23.5523 0.447715 24 1 24C1.55228 24 2 23.5523 2 23V22H22V23C22 23.5523 22.4477 24 23 24C23.5523 24 24 23.5523 24 23V1C24 0.447715 23.5523 0 23 0C22.4477 0 22 0.447715 22 1V8H20V3C20 2.44772 19.5523 2 19 2H11C10.4477 2 10 2.44772 10 3V4H5C4.44772 4 4 4.44772 4 5V8H2V1ZM10 6H6V8H10V6ZM2 10V20H4V13C4 12.4477 4.44772 12 5 12H13C13.5523 12 14 12.4477 14 13V14H19C19.5523 14 20 14.4477 20 15V20H22V10H2ZM18 8V4H12V8H18ZM12 20H6V14H12V20ZM14 20V16H18V20H14Z" fill="#758CA3"/>
-                    </g>
-                    <defs>
-                    <clipPath id="clip0_525_147">
-                    <rect width="24" height="24" fill="white"/>
-                    </clipPath>
-                    </defs>
-                </svg>
-            </div>
-            <div>
-                <p class="text-xs opacity-80 font-medium uppercase tracking-wide">Total Productos</p>
-                <p class="text-3xl font-bold">{{ number_format($totalProductos) }}</p>
+    {{-- Encabezado --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Panel de Control</h1>
+            <p class="text-sm text-gray-500 mt-1">Resumen general del sistema de inventario</p>
+        </div>
+        <div class="text-sm text-gray-400">
+            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            {{ now()->isoFormat('D [de] MMMM [de] YYYY') }}
+        </div>
+    </div>
+
+    {{-- Tarjetas principales --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {{-- Total Productos --}}
+        <div class="rounded-xl p-5 text-white shadow-lg transition hover:shadow-xl" style="background: linear-gradient(135deg, #4A568D 0%, #5d6ba3 100%);">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs opacity-90 font-medium uppercase tracking-wide mb-1">Total Productos</p>
+                    <p class="text-3xl font-bold mb-1">{{ number_format($totalProductos) }}</p>
+                    <p class="text-xs opacity-75">en inventario</p>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg p-2.5">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
             </div>
         </div>
 
-
-        <div class="rounded-xl p-5 flex items-center gap-4 shadow bg-white border-l-4" style="border-color:#4A568D;">
-            <div class="rounded-lg p-3" style="background-color:#eef0f8;">
-                <svg class="w-7 h-7" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                </svg>
+        {{-- Valor Total --}}
+        <div class="bg-white rounded-xl p-5 shadow border-l-4 transition hover:shadow-lg" style="border-color:#4A568D;">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Valor Inventario</p>
+                    <p class="text-3xl font-bold text-gray-800 mb-1">${{ number_format($valorInventario, 2) }}</p>
+                    <p class="text-xs text-gray-400">valor total estimado</p>
+                </div>
+                <div class="rounded-lg p-2.5" style="background-color:#eef0f8;">
+                    <svg class="w-6 h-6" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
             </div>
-            <div>
-                <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Movimientos Hoy</p>
-                <p class="text-3xl font-bold text-gray-800">{{ number_format($totalMovimientos) }}</p>
+        </div>
+
+        {{-- Movimientos Hoy --}}
+        <div class="bg-white rounded-xl p-5 shadow border-l-4 transition hover:shadow-lg" style="border-color:#4A568D;">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Movimientos Hoy</p>
+                    <p class="text-3xl font-bold text-gray-800 mb-1">{{ number_format($totalMovimientos) }}</p>
+                    <p class="text-xs text-gray-400">{{ number_format($movimientosSemana) }} esta semana</p>
+                </div>
+                <div class="rounded-lg p-2.5" style="background-color:#eef0f8;">
+                    <svg class="w-6 h-6" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        {{-- Solicitudes --}}
+        <div class="bg-white rounded-xl p-5 shadow border-l-4 transition hover:shadow-lg" style="border-color:#4A568D;">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Solicitudes</p>
+                    <p class="text-3xl font-bold text-gray-800 mb-1">{{ number_format($totalSolicitudes) }}</p>
+                    <p class="text-xs text-gray-400">{{ number_format($solicitudesPendientes) }} pendientes</p>
+                </div>
+                <div class="rounded-lg p-2.5" style="background-color:#eef0f8;">
+                    <svg class="w-6 h-6" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- Buscador din&aacute;mico --}}
+    {{-- Alertas y estadísticas de secciones --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {{-- Stock Bajo --}}
+        <div class="bg-white rounded-lg p-4 shadow border-l-4 border-orange-400">
+            <div class="flex items-center gap-3">
+                <div class="bg-orange-50 rounded-lg p-2.5">
+                    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-sm font-semibold text-gray-700">Stock Bajo</h3>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($productosStockBajo) }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">productos con menos de 10 unidades</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- No Conforme --}}
+        <div class="bg-white rounded-lg p-4 shadow border-l-4 border-red-400">
+            <div class="flex items-center gap-3">
+                <div class="bg-red-50 rounded-lg p-2.5">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-sm font-semibold text-gray-700">No Conforme</h3>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($productosNoConformes) }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">productos marcados como NC</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Próximos a Vencer --}}
+        <div class="bg-white rounded-lg p-4 shadow border-l-4 border-yellow-400">
+            <div class="flex items-center gap-3">
+                <div class="bg-yellow-50 rounded-lg p-2.5">
+                    <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-sm font-semibold text-gray-700">Próximos a Vencer</h3>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($productosProximosVencer) }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">vencen en los próximos 30 días</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Entradas Recientes --}}
+        <div class="bg-white rounded-lg p-4 shadow border-l-4" style="border-color:#4A568D;">
+            <div class="flex items-center gap-3">
+                <div class="rounded-lg p-2.5" style="background-color:#eef0f8;">
+                    <svg class="w-5 h-5" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-sm font-semibold text-gray-700">Entradas Recientes</h3>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($entradasRecientes) }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">últimos 7 días</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Barras --}}
+        <div class="bg-white rounded-lg p-4 shadow border-l-4" style="border-color:#4A568D;">
+            <div class="flex items-center gap-3">
+                <div class="rounded-lg p-2.5" style="background-color:#eef0f8;">
+                    <svg class="w-5 h-5" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-sm font-semibold text-gray-700">Categoría Barras</h3>
+                    <p class="text-2xl font-bold text-gray-900">{{ number_format($productosBarras) }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">productos en barras</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Top Categorías --}}
+        <div class="bg-white rounded-lg p-4 shadow border-l-4" style="border-color:#4A568D;">
+            <div class="flex items-center gap-3">
+                <div class="rounded-lg p-2.5" style="background-color:#eef0f8;">
+                    <svg class="w-5 h-5" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-sm font-semibold text-gray-700">Categorías Activas</h3>
+                    <p class="text-2xl font-bold text-gray-900">{{ $topCategorias->count() }}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">con productos registrados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Distribución por Categorías --}}
+    @if($topCategorias->count() > 0)
+    <div class="bg-white rounded-xl shadow border border-gray-200 p-5">
+        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            Top 5 Categorías con Más Productos
+        </h3>
+        <div class="space-y-3">
+            @foreach($topCategorias as $item)
+            @php
+                $porcentaje = $totalProductos > 0 ? ($item->total / $totalProductos) * 100 : 0;
+            @endphp
+            <div>
+                <div class="flex items-center justify-between text-sm mb-1.5">
+                    <span class="font-medium text-gray-700">
+                        {{ $item->categoria->codigo ?? 'Sin categoría' }} — {{ $item->categoria->descripcion ?? 'N/A' }}
+                    </span>
+                    <span class="text-gray-900 font-semibold">{{ number_format($item->total) }} <span class="text-gray-400 text-xs font-normal">({{ number_format($porcentaje, 1) }}%)</span></span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div class="h-2 rounded-full transition-all duration-500" style="background-color:#4A568D; width: {{ $porcentaje }}%"></div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- Tablas de actividad reciente --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {{-- Últimas Requisiciones --}}
+        <div class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <svg class="w-5 h-5" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Últimas Requisiciones
+                </h3>
+                <a href="{{ route('solicitudes.index') }}" class="text-xs font-medium hover:underline" style="color:#4A568D;">Ver todas →</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead style="background-color:#4A568D;">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Folio</th>
+                            <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Producto</th>
+                            <th class="px-3 py-2 text-center text-white font-semibold uppercase tracking-wide">Cant.</th>
+                            <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Depto.</th>
+                            <th class="px-3 py-2 text-center text-white font-semibold uppercase tracking-wide">Estado</th>
+                            <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($ultimasRequisiciones as $req)
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-3 py-2 font-mono font-semibold whitespace-nowrap" style="color:#4A568D;">{{ $req->folio }}</td>
+                            <td class="px-3 py-2 text-gray-800">{{ $req->producto->descripcion ?? 'N/A' }}</td>
+                            <td class="px-3 py-2 text-center text-gray-700">{{ number_format($req->cantidad, 2) }}</td>
+                            <td class="px-3 py-2 text-gray-700">{{ $req->departamento->nombre ?? 'N/A' }}</td>
+                            <td class="px-3 py-2 text-center">
+                                @if($req->estado === 'pendiente')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Pendiente</span>
+                                @elseif($req->estado === 'aprobada')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aprobada</span>
+                                @elseif($req->estado === 'rechazada')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Rechazada</span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{{ ucfirst($req->estado) }}</span>
+                                @endif
+                            </td>
+                            <td class="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{{ $req->created_at->format('d/m/Y H:i') }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-400 text-sm">No hay requisiciones registradas</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- Últimos Movimientos --}}
+        <div class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <svg class="w-5 h-5" style="color:#4A568D;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                    </svg>
+                    Últimos Movimientos
+                </h3>
+                <a href="{{ route('movimientos.index') }}" class="text-xs font-medium hover:underline" style="color:#4A568D;">Ver todos →</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead style="background-color:#4A568D;">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Producto</th>
+                            <th class="px-3 py-2 text-center text-white font-semibold uppercase tracking-wide">Tipo</th>
+                            <th class="px-3 py-2 text-center text-white font-semibold uppercase tracking-wide">Cantidad</th>
+                            <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Usuario</th>
+                            <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($ultimosMovimientos as $mov)
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-3 py-2 text-gray-800">{{ $mov->producto->descripcion ?? 'N/A' }}</td>
+                            <td class="px-3 py-2 text-center">
+                                @if($mov->tipo_movimiento === 'entrada')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4"/>
+                                        </svg>
+                                        Entrada
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                                        </svg>
+                                        Salida
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-3 py-2 text-center font-semibold text-gray-700">{{ number_format($mov->cantidad, 2) }}</td>
+                            <td class="px-3 py-2 text-gray-600">{{ $mov->usuario->name ?? 'Sistema' }}</td>
+                            <td class="px-3 py-2 text-gray-600 text-xs whitespace-nowrap">{{ $mov->created_at->format('d/m/Y H:i') }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-400 text-sm">No hay movimientos registrados</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {{-- Buscador dinámico --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="px-4 py-3 flex gap-3 items-center">
             <div class="flex-1 relative">
