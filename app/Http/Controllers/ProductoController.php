@@ -313,4 +313,28 @@ class ProductoController extends Controller
             return redirect()->route('productos.import')->with('error', 'Error al importar: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Marcar / desmarcar producto como No Conforme.
+     * PATCH /productos/{producto}/no-conforme
+     */
+    public function toggleNoConforme(Request $request, Producto $producto)
+    {
+        $request->validate([
+            'no_conforme'    => 'required|boolean',
+            'observacion_nc' => 'nullable|string|max:1000',
+        ]);
+
+        $producto->update([
+            'no_conforme'    => $request->no_conforme,
+            'observacion_nc' => $request->observacion_nc ?? $producto->observacion_nc,
+            'fecha_nc'       => $request->no_conforme ? ($producto->fecha_nc ?? now()->toDateString()) : null,
+        ]);
+
+        return response()->json([
+            'ok'          => true,
+            'no_conforme' => $producto->no_conforme,
+            'fecha_nc'    => $producto->fecha_nc?->format('d/m/Y'),
+        ]);
+    }
 }

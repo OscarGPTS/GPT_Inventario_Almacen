@@ -25,6 +25,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/productos/search', [ProductoController::class, 'search'])->name('productos.search');
     Route::get('/productos/importar', [ProductoController::class, 'importForm'])->name('productos.import');
     Route::post('/productos/importar', [ProductoController::class, 'import'])->name('productos.import.process');
+    Route::patch('/productos/{producto}/no-conforme', [ProductoController::class, 'toggleNoConforme'])->name('productos.no_conforme');
     Route::resource('productos', ProductoController::class);
     
     // Solicitudes

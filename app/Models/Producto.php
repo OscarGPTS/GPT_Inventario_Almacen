@@ -29,13 +29,18 @@ class Producto extends Model
         'observaciones',
         'fecha_vencimiento',
         'hoja_seguridad',
+        'no_conforme',
+        'observacion_nc',
+        'fecha_nc',
     ];
 
     protected $casts = [
-        'fecha_entrada' => 'date',
-        'fecha_salida' => 'date',
-        'fecha_vencimiento' => 'date',
-        'precio_unitario' => 'decimal:2',
+        'fecha_entrada'    => 'date',
+        'fecha_salida'     => 'date',
+        'fecha_vencimiento'=> 'date',
+        'fecha_nc'         => 'date',
+        'precio_unitario'  => 'decimal:2',
+        'no_conforme'      => 'boolean',
     ];
 
     public function componente()

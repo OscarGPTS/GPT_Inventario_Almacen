@@ -111,11 +111,13 @@ class ReportesController extends Controller
     }
 
     /**
-     * No Conforme
+     * No Conforme - solo productos marcados con incidencia
      */
     public function noConforme(Request $request)
     {
         $query = Producto::with(['componente', 'categoria', 'familia', 'unidadMedida', 'ubicacion'])
+            ->where('no_conforme', true)
+            ->orderBy('fecha_nc', 'desc')
             ->orderBy('codigo');
 
         if ($request->filled('search')) {
@@ -123,7 +125,7 @@ class ReportesController extends Controller
             $query->where(function ($q) use ($s) {
                 $q->where('codigo', 'like', "%{$s}%")
                   ->orWhere('descripcion', 'like', "%{$s}%")
-                  ->orWhere('observaciones', 'like', "%{$s}%")
+                  ->orWhere('observacion_nc', 'like', "%{$s}%")
                   ->orWhere('factura', 'like', "%{$s}%");
             });
         }
