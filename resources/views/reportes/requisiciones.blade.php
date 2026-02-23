@@ -66,7 +66,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <input type="text" name="search" value="{{ request('search') }}"
-                    placeholder="Buscar por folio, solicitante, código, departamento..."
+                    placeholder="Buscar por folio, solicitante, c&oacute;digo, departamento..."
                     class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
                     autocomplete="off">
             </div>
@@ -106,7 +106,7 @@
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">U.M</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">CODIGO</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">DN / NP</th>
-                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:200px;">DESCRIPCIÓN</th>
+                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:200px;">DESCRIPCI&Oacute;N</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">PRIORIDAD</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">ESTADO</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap">REGISTRADO POR</th>
@@ -247,7 +247,7 @@
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">
                     Departamento <span class="text-red-500">*</span>
-                    <span id="deptoNuevoTag" class="hidden ml-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">✦ Se creará nuevo</span>
+                    <span id="deptoNuevoTag" class="hidden ml-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">✦ Se crear&aacute; nuevo</span>
                 </label>
                 <div class="relative">
                     <input type="text" id="depto_search"
@@ -258,7 +258,7 @@
                     <input type="hidden" name="departamento_nombre" id="depto_nombre">
                     <div id="depto_dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-44 overflow-y-auto"></div>
                 </div>
-                <p class="text-xs text-gray-400 mt-1">Si no existe, escríbelo y selecciona "Crear nuevo" — se creará automáticamente</p>
+                <p class="text-xs text-gray-400 mt-1">Si no existe, escr&iacute;belo y selecciona "Crear nuevo" — se crear&aacute; autom&aacute;ticamente</p>
             </div>
 
             {{-- Producto typeahead --}}
@@ -266,7 +266,7 @@
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Producto <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" id="prod_search"
-                        placeholder="Buscar por código o descripción..."
+                        placeholder="Buscar por c&oacute;digo o descripci&oacute;n..."
                         autocomplete="off"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
                     <input type="hidden" name="producto_id" id="prod_id">
@@ -304,7 +304,7 @@
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">DN / NP / Observaciones</label>
                 <textarea name="observaciones" rows="2"
-                    placeholder="Número de parte, número de diseño u observaciones adicionales..."
+                    placeholder="N&uacute;mero de parte, n&uacute;mero de dise&ntilde;o u observaciones adicionales..."
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"></textarea>
             </div>
         </form>
@@ -358,7 +358,7 @@ function cerrarModal() {
 document.getElementById('modalSolicitud').addEventListener('click', e => { if (e.target === document.getElementById('modalSolicitud')) cerrarModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
 
-/* ─── Typeahead genérico ─────────────────── */
+/* ─── Typeahead gen&eacute;rico ─────────────────── */
 function crearTypeahead({ inputId, dropdownId, hiddenId, endpoint, renderItem, onSelect, allowCreate = false }) {
     const input    = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
@@ -477,7 +477,7 @@ async function autoFillUM(umCodigo) {
     } catch(e) {}
 }
 
-/* ─── Validación pre-submit ──────────────── */
+/* ─── Validaci&oacute;n pre-submit ──────────────── */
 document.getElementById('formSolicitud').addEventListener('submit', function(e) {
     const prodId      = document.getElementById('prod_id').value;
     const deptoId     = document.getElementById('depto_id').value;

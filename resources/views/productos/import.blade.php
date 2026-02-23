@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Importar Productos')
 
@@ -29,16 +29,16 @@
                 <div class="mt-2 text-sm text-blue-700">
                     <p>El archivo debe contener un array de objetos con los siguientes campos:</p>
                     <ul class="list-disc list-inside mt-2 space-y-1">
-                        <li><strong>CODIGO</strong>: Código único del producto</li>
-                        <li><strong>COMP.</strong>: Código de componente</li>
-                        <li><strong>CAT.</strong>: Código de categoría</li>
-                        <li><strong>FAM.</strong>: Código de familia</li>
+                        <li><strong>CODIGO</strong>: C&oacute;digo &uacute;nico del producto</li>
+                        <li><strong>COMP.</strong>: C&oacute;digo de componente</li>
+                        <li><strong>CAT.</strong>: C&oacute;digo de categor&iacute;a</li>
+                        <li><strong>FAM.</strong>: C&oacute;digo de familia</li>
                         <li><strong>CONS.</strong>: Consecutivo</li>
-                        <li><strong>DESCRIPCIÓN</strong>: Descripción del producto</li>
+                        <li><strong>DESCRIPCI&Oacute;N</strong>: Descripci&oacute;n del producto</li>
                         <li><strong>UM</strong>: Unidad de medida</li>
                         <li><strong>ENTRADA</strong>: Cantidad de entrada</li>
-                        <li><strong>UBIC.</strong>: Ubicación</li>
-                        <li><strong>FISICO</strong>: Cantidad física</li>
+                        <li><strong>UBIC.</strong>: Ubicaci&oacute;n</li>
+                        <li><strong>FISICO</strong>: Cantidad f&iacute;sica</li>
                         <li><strong>P.U</strong>: Precio unitario</li>
                         <li><strong>MXN/USD</strong>: Moneda (MXN o USD)</li>
                     </ul>
@@ -58,7 +58,7 @@
                 <div class="mt-2 text-sm text-green-700">
                     <p><strong>Nombre:</strong> <span id="file-name-display"></span></p>
                     <p><strong>Total de registros:</strong> <span id="total-records"></span></p>
-                    <p><strong>Tamaño:</strong> <span id="file-size"></span></p>
+                    <p><strong>Tama&ntilde;o:</strong> <span id="file-size"></span></p>
                 </div>
             </div>
         </div>
@@ -72,12 +72,12 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">C&oacute;digo</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripci&oacute;n</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">UM</th>
                         <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Entrada</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Físico</th>
-                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">F&iacute;sico</th>
+                        <th class="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ubicaci&oacute;n</th>
                     </tr>
                 </thead>
                 <tbody id="preview-tbody" class="bg-white divide-y divide-gray-200">
@@ -100,7 +100,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
                         <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click para seleccionar</span> o arrastra el archivo</p>
-                        <p class="text-xs text-gray-500">Archivo JSON (Máximo 100MB)</p>
+                        <p class="text-xs text-gray-500">Archivo JSON (M&aacute;ximo 100MB)</p>
                     </div>
                     <input id="json_file" name="json_file" type="file" accept=".json,.txt" class="hidden" required onchange="previewFile(this)"/>
                 </label>
@@ -141,7 +141,7 @@ function previewFile(input) {
             const data = JSON.parse(e.target.result);
             
             if (!Array.isArray(data)) {
-                alert('El archivo no contiene un array JSON válido');
+                alert('El archivo no contiene un array JSON v&aacute;lido');
                 resetForm();
                 return;
             }
@@ -164,8 +164,8 @@ function previewFile(input) {
                 row.className = 'hover:bg-gray-50';
                 row.innerHTML = `
                     <td class="px-2 py-2 whitespace-nowrap text-gray-500">${index + 1}</td>
-                    <td class="px-2 py-2 whitespace-nowrap font-mono">${item.CODIGO || '<span class="text-red-600">VACÍO</span>'}</td>
-                    <td class="px-2 py-2 max-w-xs truncate" title="${item['DESCRIPCIÓN'] || ''}">${item['DESCRIPCIÓN'] || 'Sin descripción'}</td>
+                    <td class="px-2 py-2 whitespace-nowrap font-mono">${item.CODIGO || '<span class="text-red-600">VAC&Iacute;O</span>'}</td>
+                    <td class="px-2 py-2 max-w-xs truncate" title="${item['DESCRIPCI&Oacute;N'] || ''}">${item['DESCRIPCI&Oacute;N'] || 'Sin descripci&oacute;n'}</td>
                     <td class="px-2 py-2 whitespace-nowrap">${item.UM || '-'}</td>
                     <td class="px-2 py-2 whitespace-nowrap text-center">${item.ENTRADA || 0}</td>
                     <td class="px-2 py-2 whitespace-nowrap text-center">${item.FISICO || 0}</td>
@@ -202,7 +202,7 @@ function resetForm() {
 
 // Confirm before submit
 document.getElementById('import-form').onsubmit = function(e) {
-    if (!confirm(`¿Estás seguro de importar ${totalRecords.toLocaleString()} productos? Esta acción puede tomar varios minutos.`)) {
+    if (!confirm(`¿Est&aacute;s seguro de importar ${totalRecords.toLocaleString()} productos? Esta acci&oacute;n puede tomar varios minutos.`)) {
         e.preventDefault();
         return false;
     }

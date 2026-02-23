@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Resguardo de Almacén')
+@section('title', 'Resguardo de Almac&eacute;n')
 @section('content')
 @php $acento = '#4A568D'; @endphp
 
 <div class="space-y-4">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">Resguardo de Almacén</h1>
+            <h1 class="text-xl font-bold text-gray-800">Resguardo de Almac&eacute;n</h1>
             <p class="text-xs text-gray-500 mt-0.5">{{ number_format($registros->total()) }} registros</p>
         </div>
     </div>
@@ -18,7 +18,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <input type="text" name="search" value="{{ request('search') }}"
-                    placeholder="Buscar por descripción, código, observaciones..."
+                    placeholder="Buscar por descripci&oacute;n, c&oacute;digo, observaciones..."
                     class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
                     autocomplete="off">
             </div>
@@ -34,7 +34,7 @@
             <table class="w-full text-xs border-collapse" style="min-width:1200px;">
                 <thead class="sticky top-0 z-10">
                     <tr style="background-color:{{ $acento }};">
-                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:200px;">DESCRIPCIÓN</th>
+                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:200px;">DESCRIPCI&Oacute;N</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">UM</th>
                         <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">ENTRADA</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">UBIC.</th>

@@ -1,13 +1,13 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
-@section('title', 'Preview de Importación')
+@section('title', 'Preview de Importaci&oacute;n')
 
 @section('content')
 <div class="bg-white rounded-lg shadow-md p-6">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Preview de Importación</h1>
-            <p class="text-gray-600 mt-1">Revisa los datos antes de confirmar la importación</p>
+            <h1 class="text-2xl font-bold text-gray-800">Preview de Importaci&oacute;n</h1>
+            <p class="text-gray-600 mt-1">Revisa los datos antes de confirmar la importaci&oacute;n</p>
         </div>
         <a href="{{ route('productos.import') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
             <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,7 +25,7 @@
                 </svg>
             </div>
             <div class="ml-3">
-                <h3 class="text-sm font-medium text-blue-800">Información del archivo</h3>
+                <h3 class="text-sm font-medium text-blue-800">Informaci&oacute;n del archivo</h3>
                 <div class="mt-2 text-sm text-blue-700">
                     <p><strong>Total de registros a importar:</strong> {{ number_format($total) }}</p>
                     <p class="mt-1"><strong>Mostrando:</strong> Primeros {{ count($preview) }} registros como muestra</p>
@@ -40,15 +40,15 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">C&oacute;digo</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Comp.</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cat.</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fam.</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descripci&oacute;n</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">UM</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Entrada</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Físico</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">F&iacute;sico</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ubicaci&oacute;n</th>
                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">P.U.</th>
                 </tr>
             </thead>
@@ -58,7 +58,7 @@
                     <td class="px-3 py-2 whitespace-nowrap text-gray-500">{{ $index + 1 }}</td>
                     <td class="px-3 py-2 whitespace-nowrap font-mono text-xs">
                         @if(empty($item['CODIGO']))
-                            <span class="text-red-600 font-bold">VACÍO</span>
+                            <span class="text-red-600 font-bold">VAC&Iacute;O</span>
                         @else
                             {{ $item['CODIGO'] }}
                         @endif
@@ -66,8 +66,8 @@
                     <td class="px-3 py-2 whitespace-nowrap">{{ $item['COMP.'] ?? '-' }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ $item['CAT.'] ?? '-' }}</td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ $item['FAM.'] ?? '-' }}</td>
-                    <td class="px-3 py-2 max-w-xs truncate" title="{{ $item['DESCRIPCIÓN'] ?? 'Sin descripción' }}">
-                        {{ $item['DESCRIPCIÓN'] ?? 'Sin descripción' }}
+                    <td class="px-3 py-2 max-w-xs truncate" title="{{ $item['DESCRIPCI&Oacute;N'] ?? 'Sin descripci&oacute;n' }}">
+                        {{ $item['DESCRIPCI&Oacute;N'] ?? 'Sin descripci&oacute;n' }}
                     </td>
                     <td class="px-3 py-2 whitespace-nowrap">{{ $item['UM'] ?? '-' }}</td>
                     <td class="px-3 py-2 whitespace-nowrap text-center">{{ $item['ENTRADA'] ?? 0 }}</td>
@@ -96,7 +96,7 @@
             </div>
             <div class="ml-3">
                 <p class="text-sm text-yellow-700">
-                    Hay <strong>{{ number_format($total - count($preview)) }}</strong> registros más que no se muestran en el preview. Todos serán importados al confirmar.
+                    Hay <strong>{{ number_format($total - count($preview)) }}</strong> registros m&aacute;s que no se muestran en el preview. Todos ser&aacute;n importados al confirmar.
                 </p>
             </div>
         </div>
@@ -104,7 +104,7 @@
     @endif
 
     <!-- Confirmation Form -->
-    <form action="{{ route('productos.import.process') }}" method="POST" onsubmit="return confirm('¿Estás seguro de importar {{ number_format($total) }} productos? Esta acción puede tomar varios minutos.');">
+    <form action="{{ route('productos.import.process') }}" method="POST" onsubmit="return confirm('¿Est&aacute;s seguro de importar {{ number_format($total) }} productos? Esta acci&oacute;n puede tomar varios minutos.');">
         @csrf
         
         <div class="flex items-center justify-between border-t pt-6">
@@ -123,7 +123,7 @@
 
 @if(session('import_errors'))
 <div class="bg-white rounded-lg shadow-md p-6 mt-6">
-    <h3 class="text-lg font-bold text-red-600 mb-4">Errores de importación anterior</h3>
+    <h3 class="text-lg font-bold text-red-600 mb-4">Errores de importaci&oacute;n anterior</h3>
     <div class="bg-red-50 border border-red-200 rounded p-4 max-h-96 overflow-y-auto">
         <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
             @foreach(session('import_errors') as $error)

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido - Inventario Almacén</title>
+    <title>Bienvenido - Inventario Almac&eacute;n</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
@@ -20,7 +20,7 @@
                 </div>
             @endif
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Sistema de Inventario</h1>
-            <p class="text-gray-600">Gestión de Almacén</p>
+            <p class="text-gray-600">Gesti&oacute;n de Almac&eacute;n</p>
         </div>
 
         <!-- Contenido -->
@@ -34,10 +34,10 @@
 
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Bienvenido</h2>
-                <p class="text-gray-600">Inicia sesión con tu cuenta de Google para continuar</p>
+                <p class="text-gray-600">Inicia sesi&oacute;n con tu cuenta de Google para continuar</p>
             </div>
 
-            <!-- Botón de Google -->
+            <!-- Bot&oacute;n de Google -->
             <a href="{{ route('google.redirect') }}" 
                class="flex items-center justify-center w-full bg-white border-2 border-gray-300 rounded-lg shadow-md px-6 py-4 text-base font-semibold text-gray-800 hover:bg-gray-50 hover:shadow-lg transition-all duration-200 transform hover:scale-105">
                 <svg class="h-6 w-6 mr-3" viewBox="0 0 48 48">
@@ -46,12 +46,12 @@
                     <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                     <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </svg>
-                Iniciar sesión con Google
+                Iniciar sesi&oacute;n con Google
             </a>
 
             <div class="mt-6 text-center">
                 <p class="text-sm text-gray-500">
-                    Al iniciar sesión, aceptas nuestros términos y condiciones
+                    Al iniciar sesi&oacute;n, aceptas nuestros t&eacute;rminos y condiciones
                 </p>
             </div>
         </div>

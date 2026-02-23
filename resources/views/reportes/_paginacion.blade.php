@@ -1,7 +1,7 @@
-@if($items->hasPages())
+﻿@if($items->hasPages())
 <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
     <p class="text-xs text-gray-500">
-        Mostrando {{ $items->firstItem() }}–{{ $items->lastItem() }} de {{ number_format($items->total()) }} registros
+        Mostrando {{ $items->firstItem() }}&ndash;{{ $items->lastItem() }} de {{ number_format($items->total()) }} registros
     </p>
     <div class="flex gap-1">
         @if($items->onFirstPage())

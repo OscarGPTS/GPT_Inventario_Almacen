@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Productos')
 
@@ -29,10 +29,10 @@
 
     <!-- Filters -->
     <form method="GET" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por código o descripción..." class="border border-gray-300 rounded-md px-4 py-2">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por c&oacute;digo o descripci&oacute;n..." class="border border-gray-300 rounded-md px-4 py-2">
         
         <select name="categoria_id" class="border border-gray-300 rounded-md px-4 py-2">
-            <option value="">Todas las categorías</option>
+            <option value="">Todas las categor&iacute;as</option>
             @foreach($categorias as $categoria)
                 <option value="{{ $categoria->id }}" {{ request('categoria_id') == $categoria->id ? 'selected' : '' }}>
                     {{ $categoria->codigo }} - {{ $categoria->descripcion }}
@@ -59,7 +59,7 @@
                 </svg>
             </div>
             <div class="ml-3 flex-1">
-                <h3 class="text-sm font-medium text-red-800">Errores en la importación</h3>
+                <h3 class="text-sm font-medium text-red-800">Errores en la importaci&oacute;n</h3>
                 <div class="mt-2 text-sm text-red-700">
                     <details>
                         <summary class="cursor-pointer font-semibold hover:text-red-900">Ver {{ count(session('import_errors')) }} errores</summary>
@@ -80,9 +80,9 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ubicación</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">C&oacute;digo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripci&oacute;n</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ubicaci&oacute;n</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P.U.</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'No Conforme')
 @section('content')
 @php
@@ -22,7 +22,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-bold text-gray-800">No Conforme</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Productos con incidencia registrada &middot; {{ number_format($registros->total()) }} elementos</p>
+            <p class="text-xs text-gray-500 mt-0.5">Productos con incidencia registrada Â· {{ number_format($registros->total()) }} elementos</p>
         </div>
         <button onclick="abrirModalNC()"
             class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
@@ -42,13 +42,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <input type="text" name="search" value="{{ request('search') }}"
-                    placeholder="Buscar por codigo, descripcion, factura, estatus/observacion..."
+                    placeholder="Buscar por código, descripción, factura, estatus/observación..."
                     class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
                     autocomplete="off">
             </div>
             <button type="submit" class="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90" style="background-color:{{ $acento }}">Buscar</button>
             @if(request('search'))
-            <a href="{{ route('reportes.no_conforme') }}" class="px-3 py-2 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition">&times; Limpiar</a>
+            <a href="{{ route('reportes.no_conforme') }}" class="px-3 py-2 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition">âœ• Limpiar</a>
             @endif
         </div>
     </form>
@@ -64,7 +64,7 @@
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">CAT.</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">FAM.</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">CONS.</th>
-                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:200px;">DESCRIPCION</th>
+                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:200px;">DESCRIPCIÓN</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">UM</th>
                         <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">ENTRADA</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">UBIC.</th>
@@ -75,10 +75,10 @@
                         <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">P.U</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">MXN/USD</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">FACTURA</th>
-                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:220px;">ESTATUS / OBSERVACION</th>
+                        <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:220px;">ESTATUS / OBSERVACIÓN</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">H. SEGURIDAD</th>
-                        <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">DIAS TRANSCURRIDOS</th>
-                        <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap">ACCION</th>
+                        <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">DÍAS TRANSCURRIDOS</th>
+                        <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap">ACCIÓN</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100" id="ncTableBody">
@@ -96,52 +96,52 @@
                         <td class="px-3 py-2 font-mono font-semibold whitespace-nowrap">
                             <a href="{{ route('productos.show', $p->id) }}" class="hover:underline" style="color:{{ $acento }}">{{ $p->codigo }}</a>
                         </td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->componente->codigo ?? '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->categoria->codigo ?? '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->familia->codigo ?? '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-700 text-center">{{ $p->consecutivo ?? '&mdash;' }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->componente->codigo ?? 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->categoria->codigo ?? 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->familia->codigo ?? 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-700 text-center">{{ $p->consecutivo ?? 'â€”' }}</td>
                         <td class="px-3 py-2 text-gray-800">{{ $p->descripcion }}</td>
-                        <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->unidadMedida->codigo ?? '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->cantidad_entrada !== null ? number_format($p->cantidad_entrada, 2) : '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->ubicacion->codigo ?? '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->fecha_entrada ? $p->fecha_entrada->format('d/m/Y') : '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->cantidad_salida !== null ? number_format($p->cantidad_salida, 2) : '&mdash;' }}</td>
+                        <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->unidadMedida->codigo ?? 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->cantidad_entrada !== null ? number_format($p->cantidad_entrada, 2) : 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->ubicacion->codigo ?? 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->fecha_entrada ? $p->fecha_entrada->format('d/m/Y') : 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->cantidad_salida !== null ? number_format($p->cantidad_salida, 2) : 'â€”' }}</td>
                         <td class="px-3 py-2 text-right whitespace-nowrap font-semibold {{ ($p->cantidad_fisica !== null && $p->cantidad_fisica < 10) ? 'text-red-600' : 'text-gray-800' }}">
-                            {{ $p->cantidad_fisica !== null ? number_format($p->cantidad_fisica, 2) : '&mdash;' }}
+                            {{ $p->cantidad_fisica !== null ? number_format($p->cantidad_fisica, 2) : 'â€”' }}
                         </td>
                         <td class="px-3 py-2 text-gray-600 whitespace-nowrap">{{ now()->format('d/m/Y') }}</td>
-                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->precio_unitario !== null ? number_format($p->precio_unitario, 2) : '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->moneda ?? '&mdash;' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->factura ?? '&mdash;' }}</td>
-                        {{-- ESTATUS / OBSERVACION (editable inline) --}}
+                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->precio_unitario !== null ? number_format($p->precio_unitario, 2) : 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->moneda ?? 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->factura ?? 'â€”' }}</td>
+                        {{-- ESTATUS / OBSERVACIÃ“N (editable inline) --}}
                         <td class="px-3 py-2" style="min-width:220px;">
                             <div class="group relative">
                                 <span class="observacion-text text-gray-700 block truncate max-w-xs cursor-pointer hover:text-indigo-700 transition"
                                       data-id="{{ $p->id }}"
                                       title="{{ $p->observacion_nc ?: 'Click para editar' }}"
                                       onclick="editarObservacion(this)">
-                                    {{ $p->observacion_nc ?: '(sin estatus - click para agregar)' }}
+                                    {{ $p->observacion_nc ?: '(sin estatus â€” click para agregar)' }}
                                 </span>
                                 <div class="observacion-edit hidden flex gap-1.5 items-start mt-0.5">
                                     <textarea data-id="{{ $p->id }}"
                                         class="observacion-input flex-1 border border-indigo-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-none"
                                         rows="2">{{ $p->observacion_nc }}</textarea>
                                     <div class="flex flex-col gap-1">
-                                        <button onclick="guardarObservacion(this)" class="px-2 py-1 text-white text-xs rounded font-medium hover:opacity-90" style="background-color:{{ $acento }}">OK</button>
-                                        <button onclick="cancelarObservacion(this)" class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded hover:bg-gray-300">&times;</button>
+                                        <button onclick="guardarObservacion(this)" class="px-2 py-1 text-white text-xs rounded font-medium hover:opacity-90" style="background-color:{{ $acento }}">âœ“</button>
+                                        <button onclick="cancelarObservacion(this)" class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded hover:bg-gray-300">âœ•</button>
                                     </div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-3 py-2 text-center">
                             @if($p->hoja_seguridad)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">S&iacute;</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">SÃ­</span>
                             @else
-                                <span class="text-gray-400">&mdash;</span>
+                                <span class="text-gray-400">â€”</span>
                             @endif
                         </td>
                         <td class="px-3 py-2 text-right whitespace-nowrap {{ $diasClass }}">
-                            {{ $dias !== null ? number_format($dias) . ' dias' : '&mdash;' }}
+                            {{ $dias !== null ? number_format($dias) . ' dÃ­as' : 'â€”' }}
                             @if($p->fecha_nc)
                             <div class="text-gray-400 font-normal text-xs">desde {{ $p->fecha_nc->format('d/m/Y') }}</div>
                             @endif
@@ -152,7 +152,7 @@
                                 class="btn-resolver inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-green-300 text-green-700 hover:bg-green-50 transition"
                                 data-id="{{ $p->id }}"
                                 data-url="{{ route('productos.no_conforme', $p->id) }}"
-                                title="Marcar como resuelto - quitar de No Conforme">
+                                title="Marcar como resuelto â€” quitar de No Conforme">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>
@@ -168,7 +168,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
                                 <span class="font-medium text-green-600">Sin incidencias registradas</span>
-                                <button type="button" onclick="abrirModalNC()" class="text-sm font-medium hover:underline mt-1" style="color:{{ $acento }}">Registrar primera incidencia &rarr;</button>
+                                <button type="button" onclick="abrirModalNC()" class="text-sm font-medium hover:underline mt-1" style="color:{{ $acento }}">Registrar primera incidencia â†’</button>
                             </div>
                         </td>
                     </tr>
@@ -181,9 +181,9 @@
 
 </div>
 
-{{-- ============================================
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      MODAL: Registrar Incidencia
-============================================ --}}
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
 <div id="modalNC" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
 
@@ -206,7 +206,7 @@
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Producto <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <input type="text" id="nc_prod_search"
-                        placeholder="Buscar por codigo o descripcion..."
+                        placeholder="Buscar por código o descripción..."
                         autocomplete="off"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
                     <input type="hidden" id="nc_prod_id">
@@ -221,7 +221,7 @@
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Estatus / Observacion de la incidencia <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Estatus / observación de la incidencia <span class="text-red-500">*</span></label>
                 <textarea id="nc_observacion" rows="3"
                     placeholder="Describe el motivo o tipo de incidencia..."
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"></textarea>
@@ -249,7 +249,7 @@
 const ACENTO = '{{ $acento }}';
 const CSRF   = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
-/* --- Modal NC --- */
+/* â”€â”€â”€ Modal NC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function abrirModalNC() {
     const m = document.getElementById('modalNC');
     m.classList.remove('hidden');
@@ -268,7 +268,7 @@ function cerrarModalNC() {
 document.getElementById('modalNC').addEventListener('click', e => { if (e.target === document.getElementById('modalNC')) cerrarModalNC(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModalNC(); });
 
-/* --- Typeahead producto (modal NC) --- */
+/* â”€â”€â”€ Typeahead producto (modal NC) â”€â”€â”€â”€â”€ */
 (function() {
     const input    = document.getElementById('nc_prod_search');
     const dropdown = document.getElementById('nc_prod_dropdown');
@@ -295,9 +295,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModalN
             div.addEventListener('mousedown', e => {
                 e.preventDefault();
                 hiddenId.value = item.id;
-                input.value    = `${item.codigo} - ${item.descripcion || ''}`;
+                input.value    = `${item.codigo} â€” ${item.descripcion || ''}`;
                 dropdown.classList.add('hidden');
-                document.getElementById('nc_prod_preview_text').textContent = `${item.codigo} - ${item.descripcion || ''}`;
+                document.getElementById('nc_prod_preview_text').textContent = `${item.codigo} â€” ${item.descripcion || ''}`;
                 document.getElementById('nc_prod_preview').classList.remove('hidden');
             });
             dropdown.appendChild(div);
@@ -307,7 +307,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModalN
     }
 })();
 
-/* --- Guardar nueva incidencia --- */
+/* â”€â”€â”€ Guardar nueva incidencia â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function guardarNC() {
     const prodId    = document.getElementById('nc_prod_id').value;
     const observ    = document.getElementById('nc_observacion').value.trim();
@@ -345,10 +345,10 @@ async function guardarNC() {
     }
 }
 
-/* --- Resolver (quitar de NC) --- */
+/* â”€â”€â”€ Resolver (quitar de NC) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 document.querySelectorAll('.btn-resolver').forEach(btn => {
     btn.addEventListener('click', async function() {
-        if (!confirm('Marcar como resuelto? El producto se retirara de la lista de No Conformes.')) return;
+        if (!confirm('Â¿Marcar como resuelto? El producto se retirarÃ¡ de la lista de No Conformes.')) return;
         const url = this.dataset.url;
         const row = this.closest('tr');
         this.disabled = true;
@@ -366,14 +366,14 @@ document.querySelectorAll('.btn-resolver').forEach(btn => {
             row.style.transform  = 'translateX(30px)';
             setTimeout(() => row.remove(), 420);
         } catch(e) {
-            alert('Error al actualizar. Recarga la pagina.');
+            alert('Error al actualizar. Recarga la pÃ¡gina.');
             this.disabled = false;
             this.textContent = 'Resolver';
         }
     });
 });
 
-/* --- Edicion inline de observacion_nc --- */
+/* â”€â”€â”€ EdiciÃ³n inline de observacion_nc â”€â”€ */
 function editarObservacion(span) {
     const container = span.closest('.group');
     span.classList.add('hidden');
@@ -402,7 +402,7 @@ async function guardarObservacion(btn) {
             body   : JSON.stringify({ no_conforme: true, observacion_nc: valor }),
         });
         if (!res.ok) throw new Error();
-        span.textContent = valor || '(sin estatus - click para agregar)';
+        span.textContent = valor || '(sin estatus â€” click para agregar)';
         span.title       = valor || 'Click para editar';
         container.querySelector('.observacion-edit').classList.add('hidden');
         span.classList.remove('hidden');
@@ -410,11 +410,11 @@ async function guardarObservacion(btn) {
         alert('Error al guardar. Reintentar.');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'OK';
+        btn.textContent = 'âœ“';
     }
 }
 
-/* --- Helpers --- */
+/* â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function xss(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 @endsection

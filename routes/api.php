@@ -29,6 +29,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/productos/buscar', [ProductoApiController::class, 'search'])->name('api.productos.search');
     Route::get('/productos/buscar/{codigo}', [ProductoApiController::class, 'searchByCodigo'])->name('api.productos.buscar.codigo');
     Route::get('/productos/{id}', [ProductoApiController::class, 'show'])->name('api.productos.show');
+    Route::get('/productos/{id}', [ProductoApiController::class, 'show'])->name('api.productos.show');
     
     // Catálogos
     Route::get('/catalogos', [ProductoApiController::class, 'catalogos'])->name('api.catalogos');

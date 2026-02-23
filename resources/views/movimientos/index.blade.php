@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Movimientos')
 
@@ -14,7 +14,7 @@
     </div>
 
     <!-- Filters -->
-    <form method="GET" class="mb-6 grid grid-cols-1  md:grid-cols-4 gap-4">
+    <form method="GET" id="filter-form" class="mb-6 grid grid-cols-1  md:grid-cols-4 gap-4">
         <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar producto..." class="border border-gray-300 rounded-md px-4 py-2">
         
         <select name="tipo_movimiento" class="border border-gray-300 rounded-md px-4 py-2">
@@ -30,7 +30,7 @@
     </form>
 
     <div class="flex gap-2 mb-6">
-        <button type="submit" form="filter-form" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow transition">
+        <button type="submit" form="filter-form" class="text-white font-bold py-2 px-4 rounded-lg shadow transition hover:opacity-90" style="background-color:#4A568D">
             Filtrar
         </button>
         <a href="{{ route('movimientos.index') }}" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow transition">
@@ -41,16 +41,16 @@
     <!-- Movimientos Table -->
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+            <thead style="background-color:#4A568D">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Anterior</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Nuevo</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Fecha</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Tipo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Producto</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Cantidad</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Stock Anterior</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Stock Nuevo</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Usuario</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Descripción</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
