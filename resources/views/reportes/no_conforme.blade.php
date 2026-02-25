@@ -22,7 +22,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-bold text-gray-800">No Conforme</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Productos con incidencia registrada Â· {{ number_format($registros->total()) }} elementos</p>
+            <p class="text-xs text-gray-500 mt-0.5">Productos con incidencia registrada <b>{{ number_format($registros->total()) }}</b> elementos</p>
         </div>
         <button onclick="abrirModalNC()"
             class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
@@ -92,27 +92,12 @@
                             : ($dias > 90  ? 'text-yellow-600 font-semibold'
                             : 'text-gray-700')));
                     @endphp
-                    <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-red-50 transition-colors" data-row-id="{{ $p->id }}">
-                        <td class="px-3 py-2 font-mono font-semibold whitespace-nowrap">
-                            <a href="{{ route('productos.show', $p->id) }}" class="hover:underline" style="color:{{ $acento }}">{{ $p->codigo }}</a>
-                        </td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->componente->codigo ?? 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->categoria->codigo ?? 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->familia->codigo ?? 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-700 text-center">{{ $p->consecutivo ?? 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-800">{{ $p->descripcion }}</td>
-                        <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->unidadMedida->codigo ?? 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->cantidad_entrada !== null ? number_format($p->cantidad_entrada, 2) : 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->ubicacion->codigo ?? 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->fecha_entrada ? $p->fecha_entrada->format('d/m/Y') : 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->cantidad_salida !== null ? number_format($p->cantidad_salida, 2) : 'â€”' }}</td>
-                        <td class="px-3 py-2 text-right whitespace-nowrap font-semibold {{ ($p->cantidad_fisica !== null && $p->cantidad_fisica < 10) ? 'text-red-600' : 'text-gray-800' }}">
-                            {{ $p->cantidad_fisica !== null ? number_format($p->cantidad_fisica, 2) : 'â€”' }}
+                    <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white'  
                         </td>
                         <td class="px-3 py-2 text-gray-600 whitespace-nowrap">{{ now()->format('d/m/Y') }}</td>
-                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->precio_unitario !== null ? number_format($p->precio_unitario, 2) : 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->moneda ?? 'â€”' }}</td>
-                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->factura ?? 'â€”' }}</td>
+                        <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->precio_unitario !== null ? number_format($p->precio_unitario, 2) : '—' }}</td>
+                        <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->moneda ?? '—' }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->factura ?? '—' }}</td>
                         {{-- ESTATUS / OBSERVACIÃ“N (editable inline) --}}
                         <td class="px-3 py-2" style="min-width:220px;">
                             <div class="group relative">
@@ -120,28 +105,28 @@
                                       data-id="{{ $p->id }}"
                                       title="{{ $p->observacion_nc ?: 'Click para editar' }}"
                                       onclick="editarObservacion(this)">
-                                    {{ $p->observacion_nc ?: '(sin estatus â€” click para agregar)' }}
+                                    {{ $p->observacion_nc ?: '(sin estatus — click para agregar)' }}
                                 </span>
                                 <div class="observacion-edit hidden flex gap-1.5 items-start mt-0.5">
                                     <textarea data-id="{{ $p->id }}"
                                         class="observacion-input flex-1 border border-indigo-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-none"
                                         rows="2">{{ $p->observacion_nc }}</textarea>
                                     <div class="flex flex-col gap-1">
-                                        <button onclick="guardarObservacion(this)" class="px-2 py-1 text-white text-xs rounded font-medium hover:opacity-90" style="background-color:{{ $acento }}">âœ“</button>
-                                        <button onclick="cancelarObservacion(this)" class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded hover:bg-gray-300">âœ•</button>
+                                        <button onclick="guardarObservacion(this)" class="px-2 py-1 text-white text-xs rounded font-medium hover:opacity-90" style="background-color:{{ $acento }}">-</button>
+                                        <button onclick="cancelarObservacion(this)" class="px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded hover:bg-gray-300">-</button>
                                     </div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-3 py-2 text-center">
                             @if($p->hoja_seguridad)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">SÃ­</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">-­</span>
                             @else
-                                <span class="text-gray-400">â€”</span>
+                                <span class="text-gray-400">-</span>
                             @endif
                         </td>
                         <td class="px-3 py-2 text-right whitespace-nowrap {{ $diasClass }}">
-                            {{ $dias !== null ? number_format($dias) . ' dÃ­as' : 'â€”' }}
+                            {{ $dias !== null ? number_format($dias) . ' días' : '—' }}
                             @if($p->fecha_nc)
                             <div class="text-gray-400 font-normal text-xs">desde {{ $p->fecha_nc->format('d/m/Y') }}</div>
                             @endif

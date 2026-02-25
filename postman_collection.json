@@ -1,0 +1,332 @@
+{
+  "info": {
+    "name": "Sistema Inventario API",
+    "description": "Colección de endpoints del API REST para el Sistema de Inventario de Almacén",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "inventario_almacen_v1"
+  },
+  "item": [
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Listar Productos (Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/productos?per_page=20&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["productos"],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "description": "Cantidad de resultados por página (máx: 100)"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Búsqueda por código o descripción",
+                  "disabled": true
+                },
+                {
+                  "key": "categoria_id",
+                  "value": "",
+                  "description": "Filtrar por ID de categoría",
+                  "disabled": true
+                },
+                {
+                  "key": "stock_bajo",
+                  "value": "true",
+                  "description": "Filtrar productos con stock bajo",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene una lista paginada de productos con campos simplificados."
+          }
+        },
+        {
+          "name": "Buscar Productos (Global)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/productos/buscar?q=rodamiento&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["productos", "buscar"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "rodamiento",
+                  "description": "Término de búsqueda (requerido)"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Máximo de resultados (máx: 100)"
+                }
+              ]
+            },
+            "description": "Búsqueda global en múltiples campos. Ideal para autocompletado."
+          }
+        },
+        {
+          "name": "Obtener Producto por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/productos/:id",
+              "host": ["{{base_url}}"],
+              "path": ["productos", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del producto"
+                }
+              ]
+            },
+            "description": "Obtiene los detalles de un producto específico."
+          }
+        },
+        {
+          "name": "Buscar por Código (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/productos/buscar/:codigo",
+              "host": ["{{base_url}}"],
+              "path": ["productos", "buscar", ":codigo"],
+              "variable": [
+                {
+                  "key": "codigo",
+                  "value": "ROD-001",
+                  "description": "Código o parte del código"
+                }
+              ]
+            },
+            "description": "Búsqueda específica por código (método legacy)."
+          }
+        },
+        {
+          "name": "Estadísticas de Productos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/productos/stats",
+              "host": ["{{base_url}}"],
+              "path": ["productos", "stats"]
+            },
+            "description": "Obtiene estadísticas generales del inventario."
+          }
+        }
+      ],
+      "description": "Endpoints relacionados con productos del inventario"
+    },
+    {
+      "name": "Movimientos",
+      "item": [
+        {
+          "name": "Listar Movimientos (Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/movimientos?per_page=20&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["movimientos"],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "description": "Cantidad por página"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página"
+                },
+                {
+                  "key": "producto_id",
+                  "value": "",
+                  "description": "Filtrar por ID de producto",
+                  "disabled": true
+                },
+                {
+                  "key": "tipo_movimiento",
+                  "value": "entrada",
+                  "description": "entrada, salida, ajuste, transferencia",
+                  "disabled": true
+                },
+                {
+                  "key": "fecha_desde",
+                  "value": "2026-02-01",
+                  "description": "YYYY-MM-DD",
+                  "disabled": true
+                },
+                {
+                  "key": "fecha_hasta",
+                  "value": "2026-02-28",
+                  "description": "YYYY-MM-DD",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene una lista paginada de movimientos de inventario."
+          }
+        },
+        {
+          "name": "Obtener Movimiento por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/movimientos/:id",
+              "host": ["{{base_url}}"],
+              "path": ["movimientos", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del movimiento"
+                }
+              ]
+            },
+            "description": "Obtiene los detalles de un movimiento específico."
+          }
+        },
+        {
+          "name": "Movimientos de un Producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/productos/:producto_id/movimientos?per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["productos", ":producto_id", "movimientos"],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "description": "Cantidad de resultados"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "producto_id",
+                  "value": "1",
+                  "description": "ID del producto"
+                }
+              ]
+            },
+            "description": "Obtiene el historial de movimientos de un producto específico."
+          }
+        },
+        {
+          "name": "Estadísticas de Movimientos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/movimientos/stats",
+              "host": ["{{base_url}}"],
+              "path": ["movimientos", "stats"],
+              "query": [
+                {
+                  "key": "fecha_desde",
+                  "value": "2026-02-01",
+                  "description": "Filtrar desde fecha",
+                  "disabled": true
+                },
+                {
+                  "key": "fecha_hasta",
+                  "value": "2026-02-28",
+                  "description": "Filtrar hasta fecha",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtiene estadísticas de movimientos del inventario."
+          }
+        }
+      ],
+      "description": "Endpoints relacionados con movimientos de inventario"
+    },
+    {
+      "name": "Catálogos",
+      "item": [
+        {
+          "name": "Obtener Todos los Catálogos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/catalogos",
+              "host": ["{{base_url}}"],
+              "path": ["catalogos"]
+            },
+            "description": "Obtiene los catálogos de categorías, familias y componentes."
+          }
+        },
+        {
+          "name": "Buscar Departamentos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/departamentos/buscar?q=produccion",
+              "host": ["{{base_url}}"],
+              "path": ["departamentos", "buscar"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "produccion",
+                  "description": "Término de búsqueda"
+                }
+              ]
+            },
+            "description": "Búsqueda de departamentos para autocompletado."
+          }
+        },
+        {
+          "name": "Buscar Unidades de Medida",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/unidades-medida/buscar?q=pza",
+              "host": ["{{base_url}}"],
+              "path": ["unidades-medida", "buscar"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "pza",
+                  "description": "Término de búsqueda"
+                }
+              ]
+            },
+            "description": "Búsqueda de unidades de medida para autocompletado."
+          }
+        }
+      ],
+      "description": "Endpoints de catálogos auxiliares"
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    }
+  ]
+}

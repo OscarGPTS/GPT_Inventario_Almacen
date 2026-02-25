@@ -1,353 +1,814 @@
-# API de Inventario - Documentación
+# 📱 Documentación API - Sistema de Inventario de Almacén
 
-## URL Base
-```
-http://localhost:8000/api/v1
-```
+**Versión:** 1.0  
+**Base URL:** `http://localhost:8000/api/v1`  
+**Formato de respuesta:** JSON  
+**Charset:** UTF-8  
 
-## 📋 Campos Retornados (Simplificados)
+---
 
-Todos los endpoints de productos retornan únicamente estos campos para optimizar el rendimiento:
+## 📋 Índice
 
-- **codigo**: Código único del producto (ej: GAC0010002)
-- **descripcion**: Descripción del producto
-- **ubicacion**: Código de ubicación (ej: NV-B-9)
-- **um**: Código de unidad de medida (ej: PZ)
-- **fisico**: Cantidad física en inventario (número entero)
-- **pu**: Precio unitario (decimal)
+1. [Productos](#productos)
+2. [Movimientos](#movimientos)
+3. [Catálogos](#catálogos)
+4. [Códigos de Respuesta](#códigos-de-respuesta)
+5. [Ejemplos de Uso](#ejemplos-de-uso)
 
-**Ejemplo de registro:**
-```
-GAC0010002  |  Placa 1" X 57 1/2 X 44  |  NV-B-9  |  PZ  |  0  |  $0.00
-```
+---
 
-## Endpoints Disponibles
+## 🔷 PRODUCTOS
 
-### 📦 Productos
+### 1. Listar Productos (con paginación)
 
-#### 1. Listar Productos (Paginado)
-```http
-GET /api/v1/productos
-```
+**Endpoint:** `GET /api/v1/productos`
 
-**Parámetros de Query:**
-- `per_page` (opcional): Número de resultados por página (máx: 100, default: 15)
-- `search` (opcional): Búsqueda por código o descripción
-- `categoria_id` (opcional): Filtrar por categoría
-- `familia_id` (opcional): Filtrar por familia
-- `componente_id` (opcional): Filtrar por componente
-- `ubicacion_id` (opcional): Filtrar por ubicación
-- `stock_bajo` (opcional): Filtrar productos con stock bajo (true/false)
+**Descripción:** Obtiene una lista paginada de productos con campos simplificados.
 
-**Ejemplo:**
-```bash
-curl "http://localhost:8000/api/v1/productos?per_page=10&search=rodamiento"
-```
+**Query Parameters:**
 
-**Respuesta:**
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `per_page` | integer | No | 15 | Cantidad de resultados por página (máx: 100) |
+| `page` | integer | No | 1 | Número de página |
+| `search` | string | No | - | Búsqueda por código o descripción |
+| `categoria_id` | integer | No | - | Filtrar por ID de categoría |
+| `familia_id` | integer | No | - | Filtrar por ID de familia |
+| `componente_id` | integer | No | - | Filtrar por ID de componente |
+| `ubicacion_id` | integer | No | - | Filtrar por ID de ubicación |
+| `stock_bajo` | boolean | No | - | Filtrar productos con stock bajo |
+
+**Respuesta Exitosa (200 OK):**
+
 ```json
 {
   "data": [
     {
-      "codigo": "GCN0070001",
-      "descripcion": "Rodamiento taza h-913810 Timken",
-      "ubicacion": "A-3",
-      "um": "PZ",
-      "fisico": 2,
-      "pu": "9752.00"
+      "id": 123,
+      "codigo": "ROD-001-025",
+      "descripcion": "Rodamiento 6205 2RS",
+      "ubicacion": "A-12",
+      "um": "PZA",
+      "fisico": 45.00,
+      "pu": 125.50
     },
     {
-      "codigo": "GAC0010002",
-      "descripcion": "Placa  1\" X 57 1/2 X 44",
-      "ubicacion": "NV-B-9",
-      "um": "PZ",
-      "fisico": 0,
-      "pu": "0.00"
+      "id": 124,
+      "codigo": "ENG-002-010",
+      "descripcion": "Engrane helicoidal 20T",
+      "ubicacion": "B-05",
+      "um": "PZA",
+      "fisico": 12.00,
+      "pu": 850.00
     }
   ],
   "current_page": 1,
-  "last_page": 128,
+  "last_page": 10,
   "per_page": 15,
-  "total": 1913
+  "total": 145
 }
 ```
 
-#### 2. Obtener Producto por ID
-```http
-GET /api/v1/productos/{id}
-```
+**Ejemplo de Solicitud:**
 
-**Ejemplo:**
 ```bash
-curl "http://localhost:8000/api/v1/productos/1"
-```
+# Listar primeros 20 productos
+curl -X GET "http://localhost:8000/api/v1/productos?per_page=20"
 
-**Respuesta:**
-```json
-{
-  "id": 1,
-  "codigo": "GCN0070001",
-  "descripcion": "Rodamiento taza h-913810 Timken",
-  "ubicacion": "A-3",
-  "um": "PZ",
-  "fisico": 2,
-  "pu": "9752.00"
-}
-```
+# Buscar productos con texto "rodamiento"
+curl -X GET "http://localhost:8000/api/v1/productos?search=rodamiento"
 
-#### 3. Buscar Producto por Código
-```http
-GET /api/v1/productos/buscar/{codigo}
-```
-
-**Ejemplo:**
-```bash
-curl "http://localhost:8000/api/v1/productos/buscar/GCN007"
-```
-
-**Respuesta:**
-```json
-[
-  {
-    "id": 1,
-    "codigo": "GCN0070001",
-    "descripcion": "Rodamiento taza h-913810 Timken",
-    "cantidad_fisica": 2,
-    "componente": { ... },
-    "categoria": { ... }
-  }
-]
-```
-
-#### 5. Estadísticas de Productos
-```http
-GET /api/v1/productos/stats
-```
-
-**Ejemplo:**
-```bash
-curl "http://localhost:8000/api/v1/productos/stats"
-```codigo": "GCN0070001",
-    "descripcion": "Rodamiento taza h-913810 Timken",
-    "ubicacion": "A-3",
-    "um": "PZ",
-    "fisico": 2,
-    "pu": "9752.00"8,
-  "total_categorias": 25,
-  "total_familias": 150,
-  "total_componentes": 10,
-  "productos_stock_bajo": 45,
-  "valor_total_inventario_mxn": 8500000.50,
-  "valor_total_inventario_usd": 125000.00
-}
+# Filtrar por categoría específica
+curl -X GET "http://localhost:8000/api/v1/productos?categoria_id=5"
 ```
 
 ---
 
-### 📊 Movimientos
+### 2. Obtener Producto por ID
 
-#### 1. Listar Movimientos (Paginado)
-```http
-GET /api/v1/movimientos
-```
+**Endpoint:** `GET /api/v1/productos/{id}`
 
-**Parámetros de Query:**
-- `per_page` (opcional): Resultados por página (máx: 100, default: 15)
-- `producto_id` (opcional): Filtrar por producto
-- `tipo_movimiento` (opcional): entrada, salida, ajuste, transferencia
-- `fecha_desde` (opcional): Fecha inicio (YYYY-MM-DD)
-- `fecha_hasta` (opcional): Fecha fin (YYYY-MM-DD)
+**Descripción:** Obtiene los detalles de un producto específico.
 
-**Ejemplo:**
-```bash
-curl "http://localhost:8000/api/v1/movimientos?tipo_movimiento=entrada&fecha_desde=2024-02-01"
-```
+**Path Parameters:**
 
-**Respuesta:**
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `id` | integer | ID del producto |
+
+**Respuesta Exitosa (200 OK):**
+
 ```json
 {
-  "current_page": 1,
+  "id": 123,
+  "codigo": "ROD-001-025",
+  "descripcion": "Rodamiento 6205 2RS",
+  "ubicacion": "A-12",
+  "um": "PZA",
+  "fisico": 45.00,
+  "pu": 125.50
+}
+```
+
+**Respuesta de Error (404 Not Found):**
+
+```json
+{
+  "message": "No query results for model [App\\Models\\Producto] 999"
+}
+```
+
+**Ejemplo de Solicitud:**
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/productos/123"
+```
+
+---
+
+### 3. Buscar Productos (Global)
+
+**Endpoint:** `GET /api/v1/productos/buscar`
+
+**Descripción:** Búsqueda global en múltiples campos (código, descripción, ubicación, unidad de medida). Ideal para implementar un buscador con autocompletado.
+
+**Query Parameters:**
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `q` | string | Sí | - | Término de búsqueda |
+| `limit` | integer | No | 50 | Máximo de resultados (máx: 100) |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
   "data": [
     {
-      "id": 1,
-      "producto_id": 1,
+      "id": 123,
+      "codigo": "ROD-001-025",
+      "descripcion": "Rodamiento 6205 2RS",
+      "ubicacion": "A-12",
+      "um": "PZA",
+      "fisico": 45.00,
+      "pu": 125.50
+    }
+  ],
+  "total": 1,
+  "query": "rodamiento"
+}
+```
+
+**Notas importantes:**
+- Los resultados se ordenan por relevancia (coincidencias exactas primero)
+- Si el parámetro `q` está vacío, retorna un array vacío
+
+**Ejemplo de Solicitud:**
+
+```bash
+# Buscar productos que contengan "rodamiento"
+curl -X GET "http://localhost:8000/api/v1/productos/buscar?q=rodamiento"
+
+# Buscar con límite de 10 resultados
+curl -X GET "http://localhost:8000/api/v1/productos/buscar?q=eng&limit=10"
+```
+
+---
+
+### 4. Buscar Productos por Código (Legacy)
+
+**Endpoint:** `GET /api/v1/productos/buscar/{codigo}`
+
+**Descripción:** Búsqueda específica por código de producto (método legacy, se recomienda usar `/productos/buscar?q=` en su lugar).
+
+**Path Parameters:**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `codigo` | string | Código o parte del código del producto |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "id": 123,
+      "codigo": "ROD-001-025",
+      "descripcion": "Rodamiento 6205 2RS",
+      "ubicacion": "A-12",
+      "um": "PZA",
+      "fisico": 45.00,
+      "pu": 125.50
+    }
+  ],
+  "total": 1
+}
+```
+
+**Ejemplo de Solicitud:**
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/productos/buscar/ROD-001"
+```
+
+---
+
+### 5. Estadísticas de Productos
+
+**Endpoint:** `GET /api/v1/productos/stats`
+
+**Descripción:** Obtiene estadísticas generales del inventario.
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "total_productos": 1250,
+  "total_categorias": 22,
+  "total_familias": 15,
+  "total_componentes": 8,
+  "productos_stock_bajo": 45,
+  "valor_total_inventario_mxn": 2500000.50,
+  "valor_total_inventario_usd": 150000.00
+}
+```
+
+**Campos de la Respuesta:**
+
+- `total_productos`: Cantidad total de productos registrados
+- `total_categorias`: Cantidad de categorías disponibles
+- `total_familias`: Cantidad de familias disponibles
+- `total_componentes`: Cantidad de componentes disponibles
+- `productos_stock_bajo`: Productos donde cantidad_fisica < cantidad_entrada
+- `valor_total_inventario_mxn`: Suma total del valor en pesos mexicanos
+- `valor_total_inventario_usd`: Suma total del valor en dólares
+
+**Ejemplo de Solicitud:**
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/productos/stats"
+```
+
+---
+
+## 🔷 MOVIMIENTOS
+
+### 1. Listar Movimientos (con paginación)
+
+**Endpoint:** `GET /api/v1/movimientos`
+
+**Descripción:** Obtiene una lista paginada de movimientos de inventario.
+
+**Query Parameters:**
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `per_page` | integer | No | 15 | Cantidad de resultados por página (máx: 100) |
+| `page` | integer | No | 1 | Número de página |
+| `producto_id` | integer | No | - | Filtrar por ID de producto |
+| `tipo_movimiento` | string | No | - | Filtrar por tipo: `entrada`, `salida`, `ajuste`, `transferencia` |
+| `fecha_desde` | date | No | - | Filtrar desde fecha (formato: YYYY-MM-DD) |
+| `fecha_hasta` | date | No | - | Filtrar hasta fecha (formato: YYYY-MM-DD) |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "id": 456,
+      "producto_id": 123,
+      "usuario_id": 1,
       "tipo_movimiento": "entrada",
-      "cantidad": 10,
-      "cantidad_anterior": 5,
-      "cantidad_nueva": 15,
-      "referencia": "FAC-001",
-      "descripcion": "Entrada inicial",
-      "created_at": "2024-02-19T16:30:00.000000Z",
+      "cantidad": 100.00,
+      "cantidad_anterior": 45.00,
+      "cantidad_nueva": 145.00,
+      "solicitud_id": null,
+      "descripcion": "Recepción de compra OC-2024-001",
+      "referencia": "OC-2024-001",
+      "created_at": "2026-02-24T10:30:00.000000Z",
+      "updated_at": "2026-02-24T10:30:00.000000Z",
       "producto": {
-        "id": 1,
-        "codigo": "GCN0070001",
-        "descripcion": "Rodamiento taza h-913810 Timken"
+        "id": 123,
+        "codigo": "ROD-001-025",
+        "descripcion": "Rodamiento 6205 2RS"
       },
       "usuario": {
         "id": 1,
-        "name": "Admin User",
-        "email": "admin@example.com"
-      }
+        "name": "Juan Pérez",
+        "email": "juan.perez@empresa.com"
+      },
+      "solicitud": null
     }
   ],
-  "total": 150
+  "current_page": 1,
+  "last_page": 5,
+  "per_page": 15,
+  "total": 68
 }
 ```
 
-#### 2. Movimientos de un Producto Específico
-```http
-GET /api/v1/productos/{producto_id}/movimientos
-```
+**Ejemplo de Solicitud:**
 
-**Ejemplo:**
 ```bash
-curl "http://localhost:8000/api/v1/productos/1/movimientos?per_page=5"
-```
+# Listar movimientos de entrada
+curl -X GET "http://localhost:8000/api/v1/movimientos?tipo_movimiento=entrada"
 
-**Respuesta:**
-```json
-{
-  "producto": {
-    "id": 1,
-    "codigo": "GCN0070001",
-    "descripcion": "Rodamiento taza h-913810 Timken"
-  },
-  "movimientos": {
-    "data": [ ... ],
-    "total": 25
-  }
-}
-```
+# Movimientos de un producto específico
+curl -X GET "http://localhost:8000/api/v1/movimientos?producto_id=123"
 
-#### 3. Estadísticas de Movimientos
-```http
-GET /api/v1/movimientos/stats
-```
-
-**Parámetros de Query:**
-- `fecha_desde` (opcional): Fecha inicio
-- `fecha_hasta` (opcional): Fecha fin
-
-**Ejemplo:**
-```bash
-curl "http://localhost:8000/api/v1/movimientos/stats?fecha_desde=2024-02-01&fecha_hasta=2024-02-19"
-```
-
-**Respuesta:**
-```json
-{
-  "total_movimientos": 250,
-  "entradas": 120,
-  "salidas": 100,
-  "ajustes": 20,
-  "transferencias": 10,
-  "movimientos_hoy": 15
-}
-```
-
-#### 4. Obtener Movimiento por ID
-```http
-GET /api/v1/movimientos/{id}
-```
-
-**Ejemplo:**
-```bash
-curl "http://localhost:8000/api/v1/movimientos/1"
+# Movimientos en un rango de fechas
+curl -X GET "http://localhost:8000/api/v1/movimientos?fecha_desde=2026-02-01&fecha_hasta=2026-02-24"
 ```
 
 ---
 
-### 📚 Catálogos
+### 2. Obtener Movimiento por ID
 
-#### Obtener Catálogos de Referencia
-```http
-GET /api/v1/catalogos
+**Endpoint:** `GET /api/v1/movimientos/{id}`
+
+**Descripción:** Obtiene los detalles de un movimiento específico.
+
+**Path Parameters:**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `id` | integer | ID del movimiento |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "id": 456,
+  "producto_id": 123,
+  "usuario_id": 1,
+  "tipo_movimiento": "entrada",
+  "cantidad": 100.00,
+  "cantidad_anterior": 45.00,
+  "cantidad_nueva": 145.00,
+  "solicitud_id": null,
+  "descripcion": "Recepción de compra OC-2024-001",
+  "referencia": "OC-2024-001",
+  "created_at": "2026-02-24T10:30:00.000000Z",
+  "updated_at": "2026-02-24T10:30:00.000000Z",
+  "producto": {
+    "id": 123,
+    "codigo": "ROD-001-025",
+    "descripcion": "Rodamiento 6205 2RS",
+    "cantidad_fisica": 145.00
+  },
+  "usuario": {
+    "id": 1,
+    "name": "Juan Pérez",
+    "email": "juan.perez@empresa.com"
+  },
+  "solicitud": null
+}
 ```
 
-**Ejemplo:**
+**Ejemplo de Solicitud:**
+
 ```bash
-curl "http://localhost:8000/api/v1/catalogos"
+curl -X GET "http://localhost:8000/api/v1/movimientos/456"
 ```
 
-**Respuesta:**
+---
+
+### 3. Movimientos de un Producto
+
+**Endpoint:** `GET /api/v1/productos/{producto_id}/movimientos`
+
+**Descripción:** Obtiene el historial de movimientos de un producto específico.
+
+**Path Parameters:**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `producto_id` | integer | ID del producto |
+
+**Query Parameters:**
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `per_page` | integer | No | 15 | Cantidad de resultados por página (máx: 100) |
+| `page` | integer | No | 1 | Número de página |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "producto": {
+    "id": 123,
+    "codigo": "ROD-001-025",
+    "descripcion": "Rodamiento 6205 2RS"
+  },
+  "movimientos": {
+    "data": [
+      {
+        "id": 456,
+        "producto_id": 123,
+        "tipo_movimiento": "entrada",
+        "cantidad": 100.00,
+        "cantidad_anterior": 45.00,
+        "cantidad_nueva": 145.00,
+        "descripcion": "Recepción de compra",
+        "created_at": "2026-02-24T10:30:00.000000Z",
+        "usuario": {
+          "id": 1,
+          "name": "Juan Pérez"
+        }
+      }
+    ],
+    "current_page": 1,
+    "last_page": 3,
+    "per_page": 15,
+    "total": 42
+  }
+}
+```
+
+**Ejemplo de Solicitud:**
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/productos/123/movimientos"
+```
+
+---
+
+### 4. Estadísticas de Movimientos
+
+**Endpoint:** `GET /api/v1/movimientos/stats`
+
+**Descripción:** Obtiene estadísticas de movimientos del inventario.
+
+**Query Parameters:**
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `fecha_desde` | date | No | - | Filtrar desde fecha (formato: YYYY-MM-DD) |
+| `fecha_hasta` | date | No | - | Filtrar hasta fecha (formato: YYYY-MM-DD) |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "total_movimientos": 1250,
+  "entradas": 450,
+  "salidas": 680,
+  "ajustes": 85,
+  "transferencias": 35,
+  "movimientos_hoy": 12
+}
+```
+
+**Ejemplo de Solicitud:**
+
+```bash
+# Estadísticas generales
+curl -X GET "http://localhost:8000/api/v1/movimientos/stats"
+
+# Estadísticas de febrero 2026
+curl -X GET "http://localhost:8000/api/v1/movimientos/stats?fecha_desde=2026-02-01&fecha_hasta=2026-02-28"
+```
+
+---
+
+## 🔷 CATÁLOGOS
+
+### 1. Obtener Todos los Catálogos
+
+**Endpoint:** `GET /api/v1/catalogos`
+
+**Descripción:** Obtiene los catálogos de categorías, familias y componentes.
+
+**Respuesta Exitosa (200 OK):**
+
 ```json
 {
   "categorias": [
-    { "id": 1, "codigo": "CN", "nombre": "Categoría CN" }
+    {
+      "id": 1,
+      "codigo": "ROD",
+      "nombre": "Rodamientos"
+    },
+    {
+      "id": 2,
+      "codigo": "ENG",
+      "nombre": "Engranes"
+    }
   ],
   "familias": [
-    { "id": 1, "codigo": "007", "nombre": "Familia 007" }
+    {
+      "id": 1,
+      "codigo": "MEC",
+      "nombre": "Mecánicos"
+    }
   ],
   "componentes": [
-    { "id": 1, "codigo": "G", "nombre": "Componente G" }
+    {
+      "id": 1,
+      "codigo": "ROT",
+      "nombre": "Rotatorios"
+    }
   ]
 }
 ```
 
----
-
-## 🔒 Autenticación (Opcional - Sanctum)
-
-Para habilitar autenticación con tokens, descomentar las rutas protegidas en `routes/api.php` y configurar Sanctum.
-
-### Generar Token
-```php
-$user = User::find(1);
-$token = $user->createToken('api-token')->plainTextToken;
-```
-
-### Usar Token en Requests
-```bash
-curl -H "Authorization: Bearer {token}" "http://localhost:8000/api/v1/productos"
-```
-
----
-
-## 📝 Notas
-
-- Todos los endpoints retornan JSON
-- La paginación incluye metadata (current_page, total, per_page, etc.)
-- Los códigos de respuesta HTTP estándar se utilizan (200, 404, 500)
-- Máximo de 100 resultados por página
-- Las relaciones se cargan automáticamente con `with()`
-- Las fechas están en formato ISO 8601
-
----
-
-## 🧪 Testing con cURL
+**Ejemplo de Solicitud:**
 
 ```bash
-# Listar productos
-curl "http://localhost:8000/api/v1/productos"
-
-# Buscar productos
-curl "http://localhost:8000/api/v1/productos?search=rodamiento&per_page=5"
-
-# Stats de productos
-curl "http://localhost:8000/api/v1/productos/stats"
-
-# Obtener producto específico
-curl "http://localhost:8000/api/v1/productos/1"
-
-# Movimientos del día
-curl "http://localhost:8000/api/v1/movimientos?fecha_desde=2024-02-19"
-
-# Catálogos
-curl "http://localhost:8000/api/v1/catalogos"
+curl -X GET "http://localhost:8000/api/v1/catalogos"
 ```
 
 ---
 
-## 📦 Testing con Postman/Insomnia
+### 2. Buscar Departamentos
 
-Importa la colección base:
+**Endpoint:** `GET /api/v1/departamentos/buscar`
 
-**URL Base:** `http://localhost:8000/api/v1`
+**Descripción:** Búsqueda de departamentos para autocompletado.
 
-**Colección:**
-1. GET Productos List
-2. GET Producto Detail
-3. GET Productos Stats
-4. GET Movimientos
-5. GET Movimientos Stats
-6. GET Catálogos
+**Query Parameters:**
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `q` | string | No | - | Término de búsqueda |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "label": "Producción"
+    },
+    {
+      "id": 2,
+      "label": "Mantenimiento"
+    }
+  ],
+  "total": 2
+}
+```
+
+**Ejemplo de Solicitud:**
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/departamentos/buscar?q=prod"
+```
+
+---
+
+### 3. Buscar Unidades de Medida
+
+**Endpoint:** `GET /api/v1/unidades-medida/buscar`
+
+**Descripción:** Búsqueda de unidades de medida para autocompletado.
+
+**Query Parameters:**
+
+| Parámetro | Tipo | Requerido | Default | Descripción |
+|-----------|------|-----------|---------|-------------|
+| `q` | string | No | - | Término de búsqueda |
+
+**Respuesta Exitosa (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "label": "PZA — Pieza",
+      "codigo": "PZA"
+    },
+    {
+      "id": 2,
+      "label": "KG — Kilogramo",
+      "codigo": "KG"
+    }
+  ],
+  "total": 2
+}
+```
+
+**Ejemplo de Solicitud:**
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/unidades-medida/buscar?q=pza"
+```
+
+---
+
+## 📊 CÓDIGOS DE RESPUESTA
+
+| Código | Descripción |
+|--------|-------------|
+| `200` | Solicitud exitosa |
+| `404` | Recurso no encontrado |
+| `422` | Error de validación |
+| `500` | Error interno del servidor |
+
+---
+
+## 💡 EJEMPLOS DE USO
+
+### Ejemplo 1: Implementar Búsqueda de Productos
+
+```javascript
+// React Native / JavaScript
+const buscarProductos = async (termino) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8000/api/v1/productos/buscar?q=${encodeURIComponent(termino)}&limit=20`
+    );
+    const data = await response.json();
+    
+    if (data.total > 0) {
+      console.log(`Se encontraron ${data.total} productos`);
+      return data.data;
+    } else {
+      console.log('No se encontraron resultados');
+      return [];
+    }
+  } catch (error) {
+    console.error('Error al buscar productos:', error);
+    return [];
+  }
+};
+
+// Uso
+const resultados = await buscarProductos('rodamiento');
+```
+
+---
+
+### Ejemplo 2: Paginación de Productos
+
+```javascript
+// React Native / JavaScript
+const cargarProductos = async (pagina = 1) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8000/api/v1/productos?per_page=20&page=${pagina}`
+    );
+    const data = await response.json();
+    
+    return {
+      productos: data.data,
+      paginaActual: data.current_page,
+      totalPaginas: data.last_page,
+      total: data.total
+    };
+  } catch (error) {
+    console.error('Error al cargar productos:', error);
+    return null;
+  }
+};
+
+// Uso
+const { productos, paginaActual, totalPaginas } = await cargarProductos(1);
+```
+
+---
+
+### Ejemplo 3: Obtener Detalles de Producto y sus Movimientos
+
+```javascript
+// React Native / JavaScript
+const obtenerDetalleProducto = async (productoId) => {
+  try {
+    // Obtener datos del producto
+    const respProducto = await fetch(
+      `http://localhost:8000/api/v1/productos/${productoId}`
+    );
+    const producto = await respProducto.json();
+    
+    // Obtener movimientos del producto
+    const respMovimientos = await fetch(
+      `http://localhost:8000/api/v1/productos/${productoId}/movimientos?per_page=10`
+    );
+    const movimientos = await respMovimientos.json();
+    
+    return {
+      producto,
+      movimientos: movimientos.movimientos.data,
+      totalMovimientos: movimientos.movimientos.total
+    };
+  } catch (error) {
+    console.error('Error al obtener detalles:', error);
+    return null;
+  }
+};
+
+// Uso
+const detalle = await obtenerDetalleProducto(123);
+console.log(detalle.producto.descripcion);
+console.log(`Tiene ${detalle.totalMovimientos} movimientos registrados`);
+```
+
+---
+
+### Ejemplo 4: Filtrar Movimientos por Fecha
+
+```javascript
+// React Native / JavaScript
+const obtenerMovimientosMes = async (año, mes) => {
+  const primerDia = `${año}-${mes.toString().padStart(2, '0')}-01`;
+  const ultimoDia = new Date(año, mes, 0).getDate();
+  const ultimaFecha = `${año}-${mes.toString().padStart(2, '0')}-${ultimoDia}`;
+  
+  try {
+    const response = await fetch(
+      `http://localhost:8000/api/v1/movimientos?fecha_desde=${primerDia}&fecha_hasta=${ultimaFecha}&per_page=50`
+    );
+    const data = await response.json();
+    
+    return data.data;
+  } catch (error) {
+    console.error('Error al obtener movimientos:', error);
+    return [];
+  }
+};
+
+// Uso - Obtener movimientos de febrero 2026
+const movimientos = await obtenerMovimientosMes(2026, 2);
+```
+
+---
+
+### Ejemplo 5: Dashboard con Estadísticas
+
+```javascript
+// React Native / JavaScript
+const cargarDashboard = async () => {
+  try {
+    // Cargar estadísticas en paralelo
+    const [statsProductos, statsMovimientos] = await Promise.all([
+      fetch('http://localhost:8000/api/v1/productos/stats').then(r => r.json()),
+      fetch('http://localhost:8000/api/v1/movimientos/stats').then(r => r.json())
+    ]);
+    
+    return {
+      productos: {
+        total: statsProductos.total_productos,
+        stockBajo: statsProductos.productos_stock_bajo,
+        valorMXN: statsProductos.valor_total_inventario_mxn,
+        valorUSD: statsProductos.valor_total_inventario_usd
+      },
+      movimientos: {
+        total: statsMovimientos.total_movimientos,
+        entradas: statsMovimientos.entradas,
+        salidas: statsMovimientos.salidas,
+        hoy: statsMovimientos.movimientos_hoy
+      }
+    };
+  } catch (error) {
+    console.error('Error al cargar dashboard:', error);
+    return null;
+  }
+};
+
+// Uso
+const dashboard = await cargarDashboard();
+console.log(`Total de productos: ${dashboard.productos.total}`);
+console.log(`Movimientos hoy: ${dashboard.movimientos.hoy}`);
+```
+
+---
+
+## 🔒 AUTENTICACIÓN (Próximamente)
+
+**Nota:** Actualmente las rutas son públicas. En una versión futura se implementará autenticación con Laravel Sanctum.
+
+Cuando se implemente, se requerirá un token de acceso:
+
+```javascript
+const headers = {
+  'Authorization': 'Bearer YOUR_ACCESS_TOKEN',
+  'Content-Type': 'application/json',
+  'Accept': 'application/json'
+};
+
+const response = await fetch('http://localhost:8000/api/v1/productos', { headers });
+```
+
+---
+
+## 📝 NOTAS IMPORTANTES
+
+1. **Límites de Paginación:** El máximo de resultados por página es 100 items
+2. **Formato de Fechas:** Todas las fechas usan formato ISO 8601 (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss.sssZ)
+3. **Tipos de Movimiento:** Los valores válidos son: `entrada`, `salida`, `ajuste`, `transferencia`
+4. **Campos Numéricos:** Los campos de cantidad y precio se retornan como números decimales con 2 posiciones
+5. **Ordenamiento:** Los movimientos siempre se ordenan de más reciente a más antiguo
+6. **Búsquedas:** Las búsquedas no son case-sensitive y soportan coincidencias parciales
+
+---
+
+## 🆘 SOPORTE
+
+Para reportar problemas o solicitar nuevas funcionalidades, contactar al equipo de desarrollo backend.
+
+**Última actualización:** 24 de Febrero, 2026
