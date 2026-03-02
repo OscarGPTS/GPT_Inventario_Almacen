@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     // Reportes / Secciones
     Route::prefix('reportes')->name('reportes.')->group(function () {
         Route::get('/entradas',           [ReportesController::class, 'entradas'])->name('entradas');
+        Route::post('/entradas/importar', [ReportesController::class, 'importarEntradas'])->name('entradas.importar');
         Route::get('/requisiciones',      [ReportesController::class, 'requisiciones'])->name('requisiciones');
         Route::get('/barras',             [ReportesController::class, 'barras'])->name('barras');
         Route::post('/barras/importar',   [ReportesController::class, 'importarBarras'])->name('barras.importar');

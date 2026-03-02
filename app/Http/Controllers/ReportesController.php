@@ -665,4 +665,479 @@ class ReportesController extends Controller
                 ->with('error', 'Error al eliminar los registros: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Importar productos desde Excel para pantalla de ENTRADAS
+     */
+    public function importarEntradas(Request $request)
+    {
+        $request->validate([
+            'archivo' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'sheet_number' => 'required|integer|min:1',
+            'import_mode' => 'required|in:update_create,only_new,only_update',
+        ]);
+
+        try {
+            $archivo = $request->file('archivo');
+            $sheetNumber = (int) $request->sheet_number;
+            $importMode = $request->import_mode; // update_create, only_new, only_update
+            
+            // Cargar el archivo Excel
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($archivo->getRealPath());
+            
+            // Obtener el número total de hojas
+            $totalSheets = $spreadsheet->getSheetCount();
+            
+            // Verificar que el número de página sea válido
+            $sheetIndex = $sheetNumber - 1;
+            
+            if ($sheetIndex < 0 || $sheetIndex >= $totalSheets) {
+                return redirect()->route('reportes.entradas')
+                    ->with('error', "El archivo tiene {$totalSheets} página(s). Por favor, ingresa un número entre 1 y {$totalSheets}.");
+            }
+            
+            // Obtener la hoja por índice
+            try {
+                $sheet = $spreadsheet->getSheet($sheetIndex);
+                if (!$sheet) {
+                    return redirect()->route('reportes.entradas')
+                        ->with('error', "No se pudo acceder a la página {$sheetNumber} del archivo Excel.");
+                }
+            } catch (\Exception $e) {
+                return redirect()->route('reportes.entradas')
+                    ->with('error', "Error al acceder a la página {$sheetNumber}: " . $e->getMessage());
+            }
+
+            $rows = $sheet->toArray();
+            
+            if (empty($rows)) {
+                return redirect()->route('reportes.entradas')
+                    ->with('error', 'La hoja está vacía o no contiene datos.');
+            }
+
+            // DETECCIÓN AUTOMÁTICA DEL HEADER
+            $headerRowIndex = -1;
+            $headers = [];
+            
+            for ($i = 0; $i < min(10, count($rows)); $i++) {
+                $row = $rows[$i];
+                if (empty(array_filter($row))) continue;
+                
+                $potentialHeaders = array_map('trim', array_map('strtoupper', $row));
+                
+                $tieneCodigoCol = in_array('CODIGO', $potentialHeaders);
+                $tieneDescripcionCol = in_array('DESCRIPCIÓN', $potentialHeaders) || 
+                                        in_array('DESCRIPCION', $potentialHeaders);
+                
+                if ($tieneCodigoCol && $tieneDescripcionCol) {
+                    $headerRowIndex = $i;
+                    $headers = $potentialHeaders;
+                    Log::info("Header detectado en la fila " . ($i + 1) . " para importación de entradas");
+                    break;
+                }
+            }
+            
+            if ($headerRowIndex === -1) {
+                $preview = [];
+                for ($i = 0; $i < min(3, count($rows)); $i++) {
+                    $preview[] = "Fila " . ($i + 1) . ": " . implode(', ', array_slice($rows[$i], 0, 5));
+                }
+                $previewText = implode(' | ', $preview);
+                
+                return redirect()->route('reportes.entradas')
+                    ->with('error', "❌ No se pudo detectar el encabezado automáticamente. Asegúrate de que hay una fila con 'CODIGO' y 'DESCRIPCION'. Primeras filas: {$previewText}");
+            }
+            
+            if (!in_array('CODIGO', $headers)) {
+                $columnasEncontradas = implode(', ', array_slice($headers, 0, 10));
+                return redirect()->route('reportes.entradas')
+                    ->with('error', "❌ No se encontró la columna 'CODIGO'. Columnas encontradas: {$columnasEncontradas}");
+            }
+            
+            // Mapeo de columnas según el Excel de ENTRADAS
+            $colMap = [
+                'CODIGO' => array_search('CODIGO', $headers),
+                'COMP' => array_search('COMP.', $headers) !== false ? array_search('COMP.', $headers) : array_search('COMP', $headers),
+                'CAT' => array_search('CAT.', $headers) !== false ? array_search('CAT.', $headers) : array_search('CAT', $headers),
+                'FAM' => array_search('FAM.', $headers) !== false ? array_search('FAM.', $headers) : array_search('FAM', $headers),
+                'CONS' => array_search('CONS.', $headers) !== false ? array_search('CONS.', $headers) : array_search('CONS', $headers),
+                'DESCRIPCION' => array_search('DESCRIPCIÓN', $headers) !== false ? array_search('DESCRIPCIÓN', $headers) : array_search('DESCRIPCION', $headers),
+                'UM' => array_search('UM', $headers),
+                'ENTRADA' => array_search('ENTRADA', $headers),
+                'UBIC' => array_search('UBIC.', $headers) !== false ? array_search('UBIC.', $headers) : array_search('UBICACION', $headers),
+                'FECHA_ENTRADA' => array_search('FECHA ENTRADA', $headers) !== false ? array_search('FECHA ENTRADA', $headers) : array_search('FECHA DE ENTRADA', $headers),
+                'SALIDA' => array_search('SALIDA', $headers),
+                'FISICO' => array_search('FISICO', $headers),
+                'FECHA_SALIDA' => array_search('FECHA SALIDA', $headers) !== false ? array_search('FECHA SALIDA', $headers) : array_search('FECHA DE SALIDA', $headers),
+                'PU' => array_search('P.U', $headers) !== false ? array_search('P.U', $headers) : array_search('PU', $headers),
+                'MONEDA' => array_search('MXN/USD', $headers) !== false ? array_search('MXN/USD', $headers) : array_search('MONEDA', $headers),
+                'FACTURA' => array_search('FACTURA', $headers),
+                'OBSERVACIONES' => array_search('DN/NP/OBERVACIÓN', $headers) !== false 
+                    ? array_search('DN/NP/OBERVACIÓN', $headers) 
+                    : (array_search('DN/NP/OBSERVACIÓN', $headers) !== false
+                        ? array_search('DN/NP/OBSERVACIÓN', $headers)
+                        : (array_search('OBSERVACIONES', $headers) !== false
+                            ? array_search('OBSERVACIONES', $headers)
+                            : array_search('OBSERVACION', $headers))),
+                'FECHA_VENCIMIENTO' => array_search('FECHA DE VENCIMIENTO', $headers) !== false 
+                    ? array_search('FECHA DE VENCIMIENTO', $headers) 
+                    : array_search('FECHA VENCIMIENTO', $headers),
+                'HOJA_SEGURIDAD' => array_search('HOJAS DE SEGURIDAD', $headers) !== false 
+                    ? array_search('HOJAS DE SEGURIDAD', $headers) 
+                    : array_search('HOJA SEGURIDAD', $headers),
+            ];
+
+            $procesados = 0;
+            $actualizados = 0;
+            $creados = 0;
+            $ignorados = 0;
+            $errores = 0;
+            $erroresDetalle = [];
+            
+            // ========== CREAR VALORES POR DEFECTO PARA CAMPOS OBLIGATORIOS ==========
+            $componenteDefault = \App\Models\Componente::firstOrCreate(
+                ['codigo' => 'X'],
+                ['nombre' => 'Sin Componente', 'descripcion' => 'Componente por defecto para importación']
+            );
+            
+            $categoriaDefault = \App\Models\Categoria::firstOrCreate(
+                ['codigo' => 'XX'],
+                ['descripcion' => 'Categoría por defecto']
+            );
+            
+            $familiaDefault = \App\Models\Familia::firstOrCreate(
+                ['codigo' => '000'],
+                ['descripcion' => 'Familia por defecto para importación']
+            );
+            
+            $unidadMedidaDefault = \App\Models\UnidadMedida::firstOrCreate(
+                ['codigo' => 'PZA'],
+                ['nombre' => 'PIEZA', 'descripcion' => 'Unidad por defecto']
+            );
+            
+            Log::info("Valores por defecto creados para importación de entradas: Componente={$componenteDefault->id}, Categoría={$categoriaDefault->id}, Familia={$familiaDefault->id}, UM={$unidadMedidaDefault->id}");
+
+            // Procesar desde la fila después del header
+            $startRow = $headerRowIndex + 1;
+            Log::info("Iniciando procesamiento de entradas desde la fila " . ($startRow + 1));
+            
+            for ($i = $startRow; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                
+                // Saltar filas vacías
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+
+                try {
+                    $codigo = $colMap['CODIGO'] !== false ? trim($row[$colMap['CODIGO']] ?? '') : '';
+                    
+                    // Si no hay código, saltar registro
+                    if (empty($codigo)) {
+                        $errores++;
+                        $erroresDetalle[] = "Fila " . ($i + 1) . ": Sin código (descartado)";
+                        continue;
+                    }
+
+                    // EXTRAER O BUSCAR COMPONENTE, CATEGORÍA, FAMILIA
+                    // Prioridad 1: Leer de las columnas COMP, CAT, FAM del Excel
+                    $componenteId = $componenteDefault->id;
+                    $categoriaId = $categoriaDefault->id;
+                    $familiaId = $familiaDefault->id;
+                    $consecutivo = '0001';
+                    
+                    // Intentar leer del Excel primero
+                    if ($colMap['COMP'] !== false && !empty($row[$colMap['COMP']])) {
+                        $compCodigo = trim($row[$colMap['COMP']]);
+                        $componente = \App\Models\Componente::firstOrCreate(
+                            ['codigo' => strtoupper($compCodigo)],
+                            ['nombre' => 'Componente ' . strtoupper($compCodigo), 'descripcion' => 'Creado desde importación']
+                        );
+                        $componenteId = $componente->id;
+                    }
+                    
+                    if ($colMap['CAT'] !== false && !empty($row[$colMap['CAT']])) {
+                        $catCodigo = trim($row[$colMap['CAT']]);
+                        $categoria = \App\Models\Categoria::firstOrCreate(
+                            ['codigo' => strtoupper($catCodigo)],
+                            ['descripcion' => 'Categoría ' . strtoupper($catCodigo)]
+                        );
+                        $categoriaId = $categoria->id;
+                    }
+                    
+                    if ($colMap['FAM'] !== false && !empty($row[$colMap['FAM']])) {
+                        $famCodigo = trim($row[$colMap['FAM']]);
+                        $familia = \App\Models\Familia::firstOrCreate(
+                            ['codigo' => strtoupper($famCodigo)],
+                            ['descripcion' => 'Familia ' . strtoupper($famCodigo)]
+                        );
+                        $familiaId = $familia->id;
+                    }
+                    
+                    if ($colMap['CONS'] !== false && !empty($row[$colMap['CONS']])) {
+                        $consecutivo = trim($row[$colMap['CONS']]);
+                    } else {
+                        // Intentar extraer del código si tiene formato completo
+                        if (strlen($codigo) >= 10) {
+                            $consecutivo = substr($codigo, -4);
+                        }
+                    }
+                    
+                    // Prioridad 2: Si no se encontraron en el Excel, intentar extraer del código
+                    if ($componenteId === $componenteDefault->id && strlen($codigo) >= 10) {
+                        $componenteCodigo = strtoupper(substr($codigo, 0, 1));
+                        $componente = \App\Models\Componente::firstOrCreate(
+                            ['codigo' => $componenteCodigo],
+                            ['nombre' => 'Componente ' . $componenteCodigo, 'descripcion' => 'Extraído del código']
+                        );
+                        $componenteId = $componente->id;
+                    }
+                    
+                    if ($categoriaId === $categoriaDefault->id && strlen($codigo) >= 10) {
+                        $categoriaCodigo = strtoupper(substr($codigo, 1, 2));
+                        $categoria = \App\Models\Categoria::firstOrCreate(
+                            ['codigo' => $categoriaCodigo],
+                            ['descripcion' => 'Categoría ' . $categoriaCodigo]
+                        );
+                        $categoriaId = $categoria->id;
+                    }
+                    
+                    if ($familiaId === $familiaDefault->id && strlen($codigo) >= 10) {
+                        $familiaCodigo = substr($codigo, 3, 3);
+                        $familia = \App\Models\Familia::firstOrCreate(
+                            ['codigo' => $familiaCodigo],
+                            ['descripcion' => 'Familia ' . $familiaCodigo]
+                        );
+                        $familiaId = $familia->id;
+                    }
+
+                    // Descripción
+                    $descripcion = $colMap['DESCRIPCION'] !== false ? trim($row[$colMap['DESCRIPCION']] ?? '') : '';
+                    if (empty($descripcion)) {
+                        $descripcion = 'Sin descripción';
+                    }
+                    
+                    // Cantidades
+                    $cantidadEntrada = $colMap['ENTRADA'] !== false ? floatval($row[$colMap['ENTRADA']] ?? 0) : 0;
+                    $cantidadSalida = $colMap['SALIDA'] !== false ? floatval($row[$colMap['SALIDA']] ?? 0) : 0;
+                    $cantidadFisica = $colMap['FISICO'] !== false ? floatval($row[$colMap['FISICO']] ?? 0) : 0;
+                    
+                    // Precio unitario
+                    $precioUnitario = $colMap['PU'] !== false ? floatval($row[$colMap['PU']] ?? 0) : null;
+                    
+                    // Moneda
+                    $moneda = 'MXN'; // default
+                    if ($colMap['MONEDA'] !== false && !empty($row[$colMap['MONEDA']])) {
+                        $monedaVal = strtoupper(trim($row[$colMap['MONEDA']]));
+                        if (in_array($monedaVal, ['MXN', 'USD'])) {
+                            $moneda = $monedaVal;
+                        }
+                    }
+                    
+                    // Factura y observaciones
+                    $factura = $colMap['FACTURA'] !== false ? trim($row[$colMap['FACTURA']] ?? '') : null;
+                    $observaciones = $colMap['OBSERVACIONES'] !== false ? trim($row[$colMap['OBSERVACIONES']] ?? '') : null;
+                    
+                    // Hoja de seguridad
+                    $hojaSeguridad = $colMap['HOJA_SEGURIDAD'] !== false ? trim($row[$colMap['HOJA_SEGURIDAD']] ?? '') : null;
+                    
+                    // Fechas
+                    $fechaEntrada = null;
+                    if ($colMap['FECHA_ENTRADA'] !== false && !empty($row[$colMap['FECHA_ENTRADA']])) {
+                        $fechaEntrada = $this->parsearFecha($row[$colMap['FECHA_ENTRADA']]);
+                    }
+                    
+                    $fechaSalida = null;
+                    if ($colMap['FECHA_SALIDA'] !== false && !empty($row[$colMap['FECHA_SALIDA']])) {
+                        $fechaSalida = $this->parsearFecha($row[$colMap['FECHA_SALIDA']]);
+                    }
+                    
+                    $fechaVencimiento = null;
+                    if ($colMap['FECHA_VENCIMIENTO'] !== false && !empty($row[$colMap['FECHA_VENCIMIENTO']])) {
+                        $fechaVencimiento = $this->parsearFecha($row[$colMap['FECHA_VENCIMIENTO']]);
+                    }
+
+                    // Unidad de Medida (con valor por defecto obligatorio)
+                    $unidadMedidaId = $unidadMedidaDefault->id;
+                    if ($colMap['UM'] !== false && !empty($row[$colMap['UM']])) {
+                        $um = trim($row[$colMap['UM']]);
+                        $unidadMedida = \App\Models\UnidadMedida::firstOrCreate(
+                            ['codigo' => strtoupper($um)],
+                            ['nombre' => strtoupper($um), 'descripcion' => 'Creada desde importación']
+                        );
+                        $unidadMedidaId = $unidadMedida->id;
+                    }
+
+                    // Ubicación
+                    $ubicacionId = null;
+                    if ($colMap['UBIC'] !== false && !empty($row[$colMap['UBIC']])) {
+                        $ubic = trim($row[$colMap['UBIC']]);
+                        $ubicacion = \App\Models\Ubicacion::firstOrCreate(
+                            ['codigo' => strtoupper($ubic)],
+                            ['nombre' => 'Ubicación ' . strtoupper($ubic)]
+                        );
+                        $ubicacionId = $ubicacion->id;
+                    }
+
+                    // ========== VALIDACIÓN FINAL DE CAMPOS OBLIGATORIOS ==========
+                    if (!$componenteId || !$categoriaId || !$familiaId || !$unidadMedidaId || empty($descripcion) || empty($consecutivo)) {
+                        $errores++;
+                        $erroresDetalle[] = "Fila " . ($i + 1) . ": Código '{$codigo}' - Faltan campos obligatorios";
+                        Log::error("Fila " . ($i + 1) . ": Validación falló - campos obligatorios NULL o vacíos");
+                        continue;
+                    }
+
+                    // Buscar si el producto ya existe
+                    $producto = \App\Models\Producto::where('codigo', $codigo)->first();
+
+                    // APLICAR LÓGICA SEGÚN EL MODO DE IMPORTACIÓN
+                    if ($producto) {
+                        // El producto YA existe
+                        if ($importMode === 'only_new') {
+                            // Modo: Solo agregar nuevos -> Ignorar existentes
+                            $ignorados++;
+                            Log::info("Fila " . ($i + 1) . ": Producto '{$codigo}' ignorado (ya existe, modo only_new)");
+                            continue;
+                        } else {
+                            // Modo: update_create o only_update -> Actualizar
+                            $producto->update([
+                                'componente_id' => $componenteId,
+                                'categoria_id' => $categoriaId,
+                                'familia_id' => $familiaId,
+                                'consecutivo' => $consecutivo,
+                                'descripcion' => $descripcion,
+                                'unidad_medida_id' => $unidadMedidaId,
+                                'ubicacion_id' => $ubicacionId,
+                                'cantidad_entrada' => $cantidadEntrada,
+                                'cantidad_salida' => $cantidadSalida,
+                                'cantidad_fisica' => $cantidadFisica,
+                                'fecha_entrada' => $fechaEntrada,
+                                'fecha_salida' => $fechaSalida,
+                                'precio_unitario' => $precioUnitario,
+                                'moneda' => $moneda,
+                                'factura' => $factura,
+                                'observaciones' => $observaciones,
+                                'fecha_vencimiento' => $fechaVencimiento,
+                                'hoja_seguridad' => $hojaSeguridad,
+                            ]);
+                            $actualizados++;
+                            $procesados++;
+                            Log::info("Fila " . ($i + 1) . ": Producto '{$codigo}' actualizado");
+                        }
+                    } else {
+                        // El producto NO existe (es nuevo)
+                        if ($importMode === 'only_update') {
+                            // Modo: Solo actualizar existentes -> Ignorar nuevos
+                            $ignorados++;
+                            Log::info("Fila " . ($i + 1) . ": Producto '{$codigo}' ignorado (no existe, modo only_update)");
+                            continue;
+                        } else {
+                            // Modo: update_create o only_new -> Crear
+                            \App\Models\Producto::create([
+                                'codigo' => $codigo,
+                                'componente_id' => $componenteId,
+                                'categoria_id' => $categoriaId,
+                                'familia_id' => $familiaId,
+                                'consecutivo' => $consecutivo,
+                                'descripcion' => $descripcion,
+                                'unidad_medida_id' => $unidadMedidaId,
+                                'ubicacion_id' => $ubicacionId,
+                                'cantidad_entrada' => $cantidadEntrada,
+                                'cantidad_salida' => $cantidadSalida,
+                                'cantidad_fisica' => $cantidadFisica,
+                                'fecha_entrada' => $fechaEntrada,
+                                'fecha_salida' => $fechaSalida,
+                                'precio_unitario' => $precioUnitario,
+                                'moneda' => $moneda,
+                                'factura' => $factura,
+                                'observaciones' => $observaciones,
+                                'fecha_vencimiento' => $fechaVencimiento,
+                                'hoja_seguridad' => $hojaSeguridad,
+                            ]);
+                            $creados++;
+                            $procesados++;
+                            Log::info("Fila " . ($i + 1) . ": Producto '{$codigo}' creado");
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $errores++;
+                    $codigoMostrar = isset($codigo) ? $codigo : 'N/A';
+                    $errorMsg = "Fila " . ($i + 1) . " (Código: {$codigoMostrar}): " . $e->getMessage();
+                    $erroresDetalle[] = $errorMsg;
+                    Log::error("Error procesando fila " . ($i + 1) . " (Código: {$codigoMostrar}): " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
+                }
+            }
+
+            // Preparar mensaje de resultado
+            $mensaje = "✅ {$procesados} registros procesados";
+            
+            // Agregar detalles de creados y actualizados
+            $detalles = [];
+            if ($creados > 0) {
+                $detalles[] = "{$creados} nuevos";
+            }
+            if ($actualizados > 0) {
+                $detalles[] = "{$actualizados} actualizados";
+            }
+            if ($ignorados > 0) {
+                $detalles[] = "{$ignorados} omitidos";
+            }
+            
+            if (!empty($detalles)) {
+                $mensaje .= " (" . implode(", ", $detalles) . ")";
+            }
+            
+            if ($errores > 0) {
+                $mensaje .= ". ⚠️ {$errores} con errores";
+                
+                // Clasificar tipos de errores
+                $erroresSinCodigo = array_filter($erroresDetalle, function($err) {
+                    return strpos($err, 'Sin código (descartado)') !== false;
+                });
+                
+                if (count($erroresSinCodigo) > 0) {
+                    $mensaje .= " (" . count($erroresSinCodigo) . " sin código)";
+                }
+                
+                // Log para el administrador
+                Log::warning("Errores en importación de entradas ({$errores} total):", $erroresDetalle);
+            }
+
+            return redirect()->route('reportes.entradas')->with('success', $mensaje);
+
+        } catch (\Exception $e) {
+            Log::error('Error en importación de entradas: ' . $e->getMessage());
+            return redirect()->route('reportes.entradas')
+                ->with('error', 'Error al procesar el archivo: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Helper para parsear fechas de Excel
+     */
+    private function parsearFecha($valor)
+    {
+        if (empty($valor)) {
+            return null;
+        }
+        
+        // Si es un número (fecha serial de Excel)
+        if (is_numeric($valor)) {
+            try {
+                $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($valor);
+                return $date->format('Y-m-d');
+            } catch (\Exception $e) {
+                Log::warning("No se pudo parsear fecha serial de Excel: {$valor}");
+                return null;
+            }
+        }
+        
+        // Si es texto, intentar parsearlo con Carbon
+        try {
+            return \Carbon\Carbon::parse($valor)->format('Y-m-d');
+        } catch (\Exception $e) {
+            Log::warning("No se pudo parsear fecha texto: {$valor}");
+            return null;
+        }
+    }
 }
