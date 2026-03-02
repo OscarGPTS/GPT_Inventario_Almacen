@@ -43,13 +43,30 @@
     <form method="GET" action="{{ route('reportes.entradas') }}" class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="px-4 py-3 flex gap-3 items-center">
             <div class="flex-1 relative">
-                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-                <input type="text" name="search" value="{{ request('search') }}"
-                    placeholder="Buscar por c&oacute;digo, descripci&oacute;n, ubicaci&oacute;n, factura..."
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    name="search" 
+                    value="{{ request('search') }}"
+                    placeholder="Buscar por c&oacute;digo, descripci&oacute;n, ubicaci&oacute;n..."
                     class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-                    autocomplete="off">
+                    autocomplete="off"
+                    onkeyup="buscarDinamico(event)">
+                
+                {{-- Dropdown de Sugerencias --}}
+                <div id="suggestionBox" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                    <div id="loadingSuggestions" class="hidden px-4 py-3 text-sm text-gray-500 flex items-center gap-2">
+                        <svg class="animate-spin h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Buscando...
+                    </div>
+                    <div id="suggestionsContent"></div>
+                </div>
             </div>
             <button type="submit"
                 class="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
@@ -62,6 +79,13 @@
                 Limpiar
             </a>
             @endif
+        </div>
+        
+        {{-- Tip de búsqueda --}}
+        <div class="px-4 pb-3 pt-0">
+            <p class="text-xs text-gray-500">
+                Escribe al menos 2 caracteres para ver sugerencias en tiempo real
+            </p>
         </div>
     </form>
 
@@ -604,6 +628,231 @@ function mostrarPreviewTabla(rows, headers, codigoIndex) {
 
 document.getElementById('modalCargaMasiva').addEventListener('click', e => { 
     if (e.target === document.getElementById('modalCargaMasiva')) cerrarModalCargaMasiva(); 
+});
+
+// ==================== BÚSQUEDA DINÁMICA CON API ====================
+let searchTimeout = null;
+let currentSearchQuery = '';
+
+function buscarDinamico(event) {
+    const input = event.target;
+    const query = input.value.trim();
+    
+    // Ocultar sugerencias si query está vacío o es muy corto
+    if (query.length < 2) {
+        ocultarSugerencias();
+        return;
+    }
+    
+    // Si es Enter, enviar formulario
+    if (event.key === 'Enter') {
+        ocultarSugerencias();
+        input.form.submit();
+        return;
+    }
+    
+    // Si es Escape, ocultar sugerencias
+    if (event.key === 'Escape') {
+        ocultarSugerencias();
+        return;
+    }
+    
+    // Evitar búsquedas repetidas
+    if (query === currentSearchQuery) {
+        return;
+    }
+    
+    currentSearchQuery = query;
+    
+    // Cancelar búsqueda anterior (debounce)
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // Esperar 300ms antes de buscar
+    searchTimeout = setTimeout(() => {
+        realizarBusquedaAPI(query);
+    }, 300);
+}
+
+async function realizarBusquedaAPI(query) {
+    const suggestionBox = document.getElementById('suggestionBox');
+    const loadingDiv = document.getElementById('loadingSuggestions');
+    const contentDiv = document.getElementById('suggestionsContent');
+    
+    // Mostrar loading
+    suggestionBox.classList.remove('hidden');
+    loadingDiv.classList.remove('hidden');
+    contentDiv.innerHTML = '';
+    
+    try {
+        const response = await fetch(`/api/v1/productos/buscar?q=${encodeURIComponent(query)}&limit=10`);
+        const data = await response.json();
+        
+        loadingDiv.classList.add('hidden');
+        
+        if (data.total === 0) {
+            contentDiv.innerHTML = `
+                <div class="px-4 py-3 text-sm text-gray-500 text-center">
+                    <svg class="inline-block w-5 h-5 text-gray-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    No se encontraron resultados para "<strong>${escapeHtml(query)}</strong>"
+                </div>
+            `;
+        } else {
+            renderizarSugerencias(data.data, query, data.total);
+        }
+    } catch (error) {
+        loadingDiv.classList.add('hidden');
+        contentDiv.innerHTML = `
+            <div class="px-4 py-3 text-sm text-red-600">
+                <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Error al buscar productos
+            </div>
+        `;
+    }
+}
+
+function renderizarSugerencias(productos, query, total) {
+    const contentDiv = document.getElementById('suggestionsContent');
+    
+    let html = '';
+    
+    // Header con total de resultados
+    html += `
+        <div class="sticky top-0 bg-indigo-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+            <span class="text-xs font-semibold text-indigo-800">Resultados de búsqueda</span>
+            <span class="text-xs font-bold text-indigo-600">${total} encontrados</span>
+        </div>
+    `;
+    
+    // Productos
+    productos.forEach((producto, index) => {
+        const codigo = highlightText(producto.codigo, query);
+        const descripcion = highlightText(producto.descripcion || 'Sin descripción', query);
+        const ubicacion = producto.ubicacion ? highlightText(producto.ubicacion, query) : '<span class="text-gray-400">S/U</span>';
+        const um = producto.um || '-';
+        const fisico = producto.fisico || 0;
+        const pu = parseFloat(producto.pu || 0).toFixed(2);
+        
+        html += `
+            <div class="suggestion-item px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 transition"
+                 onclick="seleccionarSugerencia('${escapeHtml(producto.codigo)}')">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <span class="text-xs font-bold text-indigo-600">${index + 1}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-mono text-sm font-bold text-indigo-600">${codigo}</span>
+                            <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">${um}</span>
+                        </div>
+                        <p class="text-sm text-gray-900 truncate">${descripcion}</p>
+                        <div class="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                            <span>📍 ${ubicacion}</span>
+                            <span>📦 Stock: <strong class="text-gray-700">${fisico}</strong></span>
+                            <span>💰 $${pu}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Footer - Ver todos
+    if (total > 10) {
+        html += `
+            <div class="px-4 py-2 bg-gray-50 text-center">
+                <button type="submit" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                    Ver todos los ${total} resultados →
+                </button>
+            </div>
+        `;
+    }
+    
+    contentDiv.innerHTML = html;
+}
+
+function seleccionarSugerencia(codigo) {
+    const input = document.getElementById('searchInput');
+    input.value = codigo;
+    input.form.submit();
+}
+
+function ocultarSugerencias() {
+    document.getElementById('suggestionBox').classList.add('hidden');
+}
+
+function highlightText(text, query) {
+    if (!text) return '';
+    const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+    return text.replace(regex, '<mark class="bg-yellow-200 px-0.5 font-semibold">$1</mark>');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Cerrar sugerencias al hacer clic fuera
+document.addEventListener('click', function(event) {
+    const suggestionBox = document.getElementById('suggestionBox');
+    const searchInput = document.getElementById('searchInput');
+    
+    if (!suggestionBox.contains(event.target) && event.target !== searchInput) {
+        ocultarSugerencias();
+    }
+});
+
+// Navegación con teclado en sugerencias
+document.getElementById('searchInput').addEventListener('keydown', function(event) {
+    const suggestionBox = document.getElementById('suggestionBox');
+    
+    if (suggestionBox.classList.contains('hidden')) return;
+    
+    const items = suggestionBox.querySelectorAll('.suggestion-item');
+    if (items.length === 0) return;
+    
+    let currentIndex = -1;
+    items.forEach((item, index) => {
+        if (item.classList.contains('bg-indigo-100')) {
+            currentIndex = index;
+        }
+    });
+    
+    // Flecha abajo
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (currentIndex < items.length - 1) {
+            if (currentIndex >= 0) items[currentIndex].classList.remove('bg-indigo-100');
+            items[currentIndex + 1].classList.add('bg-indigo-100');
+            items[currentIndex + 1].scrollIntoView({ block: 'nearest' });
+        }
+    }
+    
+    // Flecha arriba
+    if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (currentIndex > 0) {
+            items[currentIndex].classList.remove('bg-indigo-100');
+            items[currentIndex - 1].classList.add('bg-indigo-100');
+            items[currentIndex - 1].scrollIntoView({ block: 'nearest' });
+        }
+    }
+    
+    // Enter en un item seleccionado
+    if (event.key === 'Enter' && currentIndex >= 0) {
+        event.preventDefault();
+        items[currentIndex].click();
+    }
 });
 </script>
 

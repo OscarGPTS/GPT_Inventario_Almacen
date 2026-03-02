@@ -176,6 +176,42 @@ class ReportesController extends Controller
     }
 
     /**
+     * Vista pública de inventario (sin autenticación)
+     */
+    public function inventarioPublico(Request $request)
+    {
+        $query = Producto::with(['ubicacion', 'unidadMedida'])
+            ->select(
+                'productos.id',
+                'productos.codigo',
+                'productos.descripcion',
+                'productos.ubicacion_id',
+                'productos.unidad_medida_id',
+                DB::raw('SUM(productos.cantidad_fisica) as sum_fisico'),
+                DB::raw('SUM(productos.precio_unitario) as sum_pu')
+            )
+            ->groupBy('productos.id', 'productos.codigo', 'productos.descripcion', 'productos.ubicacion_id', 'productos.unidad_medida_id')
+            ->orderBy('codigo');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('productos.codigo', 'like', "%{$s}%")
+                  ->orWhere('productos.descripcion', 'like', "%{$s}%");
+            });
+        }
+
+        $registros = $query->paginate(50)->withQueryString();
+
+        $totales = [
+            'sum_fisico' => Producto::sum('cantidad_fisica'),
+            'sum_pu'     => Producto::sum('precio_unitario'),
+        ];
+
+        return view('reportes.inventario_publico', compact('registros', 'totales'));
+    }
+
+    /**
      * Importar productos de Barras desde Excel
      */
     public function importarBarras(Request $request)
@@ -191,8 +227,14 @@ class ReportesController extends Controller
             $sheetNumber = (int) $request->sheet_number;
             $actionSinCodigo = $request->action_sin_codigo;
             
-            // Cargar el archivo Excel
+            // Cargar el archivo Excel con configuración UTF-8
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($archivo->getRealPath());
+            
+            // Asegurar que PhpSpreadsheet use UTF-8 para la lectura
+            \PhpOffice\PhpSpreadsheet\Shared\StringHelper::setDecimalSeparator('.');
+            \PhpOffice\PhpSpreadsheet\Shared\StringHelper::setThousandsSeparator(',');
+            
+            Log::info("[BARRAS] Iniciando importación - Archivo: {$archivo->getClientOriginalName()}, Hoja: {$sheetNumber}");
             
             // Obtener el número total de hojas
             $totalSheets = $spreadsheet->getSheetCount();
@@ -458,7 +500,14 @@ class ReportesController extends Controller
                         Log::warning("Fila " . ($i + 1) . " - Código '{$codigo}' demasiado corto para extraer componentes (mínimo 10 caracteres)");
                     }
 
-                    $descripcion = $colMap['DESCRIPCION'] !== false ? trim($row[$colMap['DESCRIPCION']] ?? '') : '';
+                    // Leer descripción preservando caracteres especiales UTF-8
+                    $descripcionRaw = $colMap['DESCRIPCION'] !== false ? ($row[$colMap['DESCRIPCION']] ?? '') : '';
+                    $descripcion = trim($descripcionRaw);
+                    
+                    // Log para debug de caracteres especiales (solo primeras 5 filas)
+                    if ($i - $startRow < 5 && !empty($descripcion)) {
+                        Log::info("Fila " . ($i + 1) . " - Descripción leída: '{$descripcion}' [" . strlen($descripcion) . " bytes]");
+                    }
                     
                     // Validar descripción obligatoria
                     if (empty($descripcion)) {
@@ -682,8 +731,14 @@ class ReportesController extends Controller
             $sheetNumber = (int) $request->sheet_number;
             $importMode = $request->import_mode; // update_create, only_new, only_update
             
-            // Cargar el archivo Excel
+            // Cargar el archivo Excel con configuración UTF-8
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($archivo->getRealPath());
+            
+            // Asegurar que PhpSpreadsheet use UTF-8 para la lectura
+            \PhpOffice\PhpSpreadsheet\Shared\StringHelper::setDecimalSeparator('.');
+            \PhpOffice\PhpSpreadsheet\Shared\StringHelper::setThousandsSeparator(',');
+            
+            Log::info("[ENTRADAS] Iniciando importación - Archivo: {$archivo->getClientOriginalName()}, Hoja: {$sheetNumber}, Modo: {$importMode}");
             
             // Obtener el número total de hojas
             $totalSheets = $spreadsheet->getSheetCount();
@@ -911,8 +966,15 @@ class ReportesController extends Controller
                         $familiaId = $familia->id;
                     }
 
-                    // Descripción
-                    $descripcion = $colMap['DESCRIPCION'] !== false ? trim($row[$colMap['DESCRIPCION']] ?? '') : '';
+                    // Descripción - Preservando caracteres especiales UTF-8
+                    $descripcionRaw = $colMap['DESCRIPCION'] !== false ? ($row[$colMap['DESCRIPCION']] ?? '') : '';
+                    $descripcion = trim($descripcionRaw);
+                    
+                    // Log para debug de caracteres especiales (solo primeras 5 filas)
+                    if ($i - $startRow < 5 && !empty($descripcion)) {
+                        Log::info("[ENTRADAS] Fila " . ($i + 1) . " - Descripción leída: '{$descripcion}' [" . strlen($descripcion) . " bytes]");
+                    }
+                    
                     if (empty($descripcion)) {
                         $descripcion = 'Sin descripción';
                     }

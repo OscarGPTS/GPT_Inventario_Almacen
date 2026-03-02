@@ -17,6 +17,9 @@ Route::get('/', function () {
 Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.redirect');
 Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
 
+// Ruta pública de inventario
+Route::get('/inventario', [ReportesController::class, 'inventarioPublico'])->name('inventario.publico');
+
 // Rutas protegidas por autenticación
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
