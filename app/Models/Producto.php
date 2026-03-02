@@ -11,6 +11,9 @@ class Producto extends Model
 
     protected $fillable = [
         'codigo',
+        'numero_requisicion',
+        'numero_parte',
+        'dimensiones',
         'componente_id',
         'categoria_id',
         'familia_id',
@@ -26,6 +29,7 @@ class Producto extends Model
         'precio_unitario',
         'moneda',
         'factura',
+        'orden_compra',
         'observaciones',
         'fecha_vencimiento',
         'hoja_seguridad',

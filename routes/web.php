@@ -43,6 +43,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/entradas',           [ReportesController::class, 'entradas'])->name('entradas');
         Route::get('/requisiciones',      [ReportesController::class, 'requisiciones'])->name('requisiciones');
         Route::get('/barras',             [ReportesController::class, 'barras'])->name('barras');
+        Route::post('/barras/importar',   [ReportesController::class, 'importarBarras'])->name('barras.importar');
+        Route::delete('/barras/borrar',   [ReportesController::class, 'borrarBarras'])->name('barras.borrar');
         Route::get('/resguardo',          [ReportesController::class, 'resguardo'])->name('resguardo');
         Route::get('/no-conforme',        [ReportesController::class, 'noConforme'])->name('no_conforme');
         Route::get('/inventario-general', [ReportesController::class, 'inventarioGeneral'])->name('inventario_general');

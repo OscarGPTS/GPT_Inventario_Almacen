@@ -116,7 +116,7 @@ const buscarProductos = async (texto) => {
 ```
 
 ### **2. Cargar lista de productos con paginación**
-```javascript
+```javascript 
 const cargarProductos = async (pagina = 1) => {
   const url = `http://localhost:8000/api/v1/productos?per_page=20&page=${pagina}`;
   const response = await fetch(url);

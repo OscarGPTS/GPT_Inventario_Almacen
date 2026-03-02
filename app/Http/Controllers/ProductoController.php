@@ -61,56 +61,113 @@ class ProductoController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'componente_id' => 'required|exists:componentes,id',
-            'categoria_id' => 'required|exists:categorias,id',
-            'familia_id' => 'required|exists:familias,id',
-            'consecutivo' => 'required|string|max:10',
+        // Validación inicial (permitimos strings temporalmente para manejar "new:xxx")
+        $request->validate([
+            'codigo' => 'required|string|max:50',
+            'numero_requisicion' => 'nullable|string|max:50',
+            'numero_parte' => 'nullable|string|max:100',
+            'dimensiones' => 'nullable|string|max:100',
             'descripcion' => 'required|string',
-            'unidad_medida_id' => 'required|exists:unidades_medida,id',
-            'ubicacion_id' => 'nullable|exists:ubicaciones,id',
-            'cantidad_entrada' => 'nullable|integer|min:0',
-            'precio_unitario' => 'nullable|numeric|min:0',
-            'moneda' => 'required|in:MXN,USD',
+            'componente_id' => 'nullable|string',
+            'categoria_id' => 'required|exists:categorias,id',
+            'unidad_medida_id' => 'nullable|string',
+            'ubicacion_id' => 'nullable|string',
+            'cantidad_entrada' => 'nullable|numeric|min:0',
+            'cantidad_fisica' => 'nullable|numeric|min:0',
             'factura' => 'nullable|string|max:50',
+            'orden_compra' => 'nullable|string|max:50',
             'observaciones' => 'nullable|string',
-            'fecha_vencimiento' => 'nullable|date',
-            'hoja_seguridad' => 'nullable|string|max:255',
         ]);
 
-        // Generar código automáticamente
-        $componente = Componente::find($request->componente_id);
-        $categoria = Categoria::find($request->categoria_id);
-        $familia = Familia::find($request->familia_id);
-        
-        $codigo = Producto::generarCodigo(
-            $componente->codigo,
-            $categoria->codigo,
-            $familia->codigo,
-            $request->consecutivo
-        );
+        // Procesar componente_id: si viene con "new:", crear nuevo componente
+        $componenteId = null;
+        if ($request->filled('componente_id')) {
+            if (str_starts_with($request->componente_id, 'new:')) {
+                $nuevoComponenteCodigo = trim(str_replace('new:', '', $request->componente_id));
+                $componente = Componente::firstOrCreate(
+                    ['codigo' => strtoupper($nuevoComponenteCodigo)],
+                    [
+                        'nombre' => 'Componente ' . strtoupper($nuevoComponenteCodigo),
+                        'descripcion' => 'Creado automáticamente desde barras'
+                    ]
+                );
+                $componenteId = $componente->id;
+            } else {
+                $componenteId = $request->componente_id;
+            }
+        }
 
-        $validated['codigo'] = $codigo;
-        $validated['cantidad_fisica'] = $request->cantidad_entrada ?? 0;
-        $validated['fecha_entrada'] = now();
+        // Procesar unidad_medida_id: si viene con "new:", crear nueva unidad
+        $unidadMedidaId = null;
+        if ($request->filled('unidad_medida_id')) {
+            if (str_starts_with($request->unidad_medida_id, 'new:')) {
+                $nuevaUnidadCodigo = trim(str_replace('new:', '', $request->unidad_medida_id));
+                $unidadMedida = UnidadMedida::firstOrCreate(
+                    ['codigo' => strtoupper($nuevaUnidadCodigo)],
+                    [
+                        'nombre' => strtoupper($nuevaUnidadCodigo),
+                        'descripcion' => 'Creada automáticamente desde barras'
+                    ]
+                );
+                $unidadMedidaId = $unidadMedida->id;
+            } else {
+                $unidadMedidaId = $request->unidad_medida_id;
+            }
+        }
 
-        $producto = Producto::create($validated);
+        // Procesar ubicacion_id: si viene con "new:", crear nueva ubicación
+        $ubicacionId = null;
+        if ($request->filled('ubicacion_id')) {
+            if (str_starts_with($request->ubicacion_id, 'new:')) {
+                $nuevaUbicacionCodigo = trim(str_replace('new:', '', $request->ubicacion_id));
+                $ubicacion = Ubicacion::firstOrCreate(
+                    ['codigo' => strtoupper($nuevaUbicacionCodigo)],
+                    ['nombre' => 'Ubicación ' . strtoupper($nuevaUbicacionCodigo)]
+                );
+                $ubicacionId = $ubicacion->id;
+            } else {
+                $ubicacionId = $request->ubicacion_id;
+            }
+        }
 
-        // Registrar movimiento de entrada inicial
+        // Crear el producto
+        $producto = Producto::create([
+            'codigo' => $request->codigo,
+            'numero_requisicion' => $request->numero_requisicion,
+            'numero_parte' => $request->numero_parte,
+            'dimensiones' => $request->dimensiones,
+            'componente_id' => $componenteId,
+            'categoria_id' => $request->categoria_id,
+            'familia_id' => null, // No se usa en barras
+            'consecutivo' => '0001', // Valor por defecto
+            'descripcion' => $request->descripcion,
+            'unidad_medida_id' => $unidadMedidaId,
+            'ubicacion_id' => $ubicacionId,
+            'cantidad_entrada' => $request->cantidad_entrada ?? 0,
+            'cantidad_salida' => 0,
+            'cantidad_fisica' => $request->cantidad_fisica ?? 0,
+            'fecha_entrada' => now(),
+            'precio_unitario' => null,
+            'moneda' => 'MXN',
+            'factura' => $request->factura,
+            'orden_compra' => $request->orden_compra,
+            'observaciones' => $request->observaciones,
+        ]);
+
+        // Registrar movimiento de entrada inicial si hay cantidad
         if ($producto->cantidad_entrada > 0) {
             Movimiento::create([
                 'producto_id' => $producto->id,
-                'usuario_id' => auth()->id(),
                 'tipo_movimiento' => 'entrada',
                 'cantidad' => $producto->cantidad_entrada,
                 'cantidad_anterior' => 0,
                 'cantidad_nueva' => $producto->cantidad_entrada,
-                'descripcion' => 'Entrada inicial de producto',
-                'referencia' => $request->factura,
+                'descripcion' => 'Entrada inicial de producto - Barras',
+                'referencia' => $request->factura ?? $request->orden_compra,
             ]);
         }
 
-        return redirect()->route('productos.index')->with('success', 'Producto creado exitosamente.');
+        return redirect()->route('reportes.barras')->with('success', 'Producto de barras creado exitosamente.');
     }
 
     public function show(Producto $producto)
@@ -141,21 +198,93 @@ class ProductoController extends Controller
 
     public function update(Request $request, Producto $producto)
     {
-        $validated = $request->validate([
+        $request->validate([
+            'codigo' => 'required|string|max:50',
+            'numero_requisicion' => 'nullable|string|max:50',
+            'numero_parte' => 'nullable|string|max:100',
+            'dimensiones' => 'nullable|string|max:100',
             'descripcion' => 'required|string',
-            'unidad_medida_id' => 'required|exists:unidades_medida,id',
-            'ubicacion_id' => 'nullable|exists:ubicaciones,id',
-            'precio_unitario' => 'nullable|numeric|min:0',
-            'moneda' => 'required|in:MXN,USD',
+            'componente_id' => 'nullable|string',
+            'categoria_id' => 'required|exists:categorias,id',
+            'unidad_medida_id' => 'nullable|string',
+            'ubicacion_id' => 'nullable|string',
+            'cantidad_entrada' => 'nullable|numeric|min:0',
+            'cantidad_fisica' => 'nullable|numeric|min:0',
             'factura' => 'nullable|string|max:50',
+            'orden_compra' => 'nullable|string|max:50',
             'observaciones' => 'nullable|string',
-            'fecha_vencimiento' => 'nullable|date',
-            'hoja_seguridad' => 'nullable|string|max:255',
         ]);
 
-        $producto->update($validated);
+        // Procesar componente_id: si viene con "new:", crear nuevo componente
+        $componenteId = null;
+        if ($request->filled('componente_id')) {
+            if (str_starts_with($request->componente_id, 'new:')) {
+                $nuevoComponenteCodigo = trim(str_replace('new:', '', $request->componente_id));
+                $componente = Componente::firstOrCreate(
+                    ['codigo' => strtoupper($nuevoComponenteCodigo)],
+                    [
+                        'nombre' => 'Componente ' . strtoupper($nuevoComponenteCodigo),
+                        'descripcion' => 'Creado automáticamente desde barras'
+                    ]
+                );
+                $componenteId = $componente->id;
+            } else {
+                $componenteId = $request->componente_id;
+            }
+        }
 
-        return redirect()->route('productos.show', $producto)->with('success', 'Producto actualizado exitosamente.');
+        // Procesar unidad_medida_id: si viene con "new:", crear nueva unidad
+        $unidadMedidaId = null;
+        if ($request->filled('unidad_medida_id')) {
+            if (str_starts_with($request->unidad_medida_id, 'new:')) {
+                $nuevaUnidadCodigo = trim(str_replace('new:', '', $request->unidad_medida_id));
+                $unidadMedida = UnidadMedida::firstOrCreate(
+                    ['codigo' => strtoupper($nuevaUnidadCodigo)],
+                    [
+                        'nombre' => strtoupper($nuevaUnidadCodigo),
+                        'descripcion' => 'Creada automáticamente desde barras'
+                    ]
+                );
+                $unidadMedidaId = $unidadMedida->id;
+            } else {
+                $unidadMedidaId = $request->unidad_medida_id;
+            }
+        }
+
+        // Procesar ubicacion_id: si viene con "new:", crear nueva ubicación
+        $ubicacionId = null;
+        if ($request->filled('ubicacion_id')) {
+            if (str_starts_with($request->ubicacion_id, 'new:')) {
+                $nuevaUbicacionCodigo = trim(str_replace('new:', '', $request->ubicacion_id));
+                $ubicacion = Ubicacion::firstOrCreate(
+                    ['codigo' => strtoupper($nuevaUbicacionCodigo)],
+                    ['nombre' => 'Ubicación ' . strtoupper($nuevaUbicacionCodigo)]
+                );
+                $ubicacionId = $ubicacion->id;
+            } else {
+                $ubicacionId = $request->ubicacion_id;
+            }
+        }
+
+        // Actualizar el producto
+        $producto->update([
+            'codigo' => $request->codigo,
+            'numero_requisicion' => $request->numero_requisicion,
+            'numero_parte' => $request->numero_parte,
+            'dimensiones' => $request->dimensiones,
+            'componente_id' => $componenteId,
+            'categoria_id' => $request->categoria_id,
+            'descripcion' => $request->descripcion,
+            'unidad_medida_id' => $unidadMedidaId,
+            'ubicacion_id' => $ubicacionId,
+            'cantidad_entrada' => $request->cantidad_entrada ?? $producto->cantidad_entrada,
+            'cantidad_fisica' => $request->cantidad_fisica ?? $producto->cantidad_fisica,
+            'factura' => $request->factura,
+            'orden_compra' => $request->orden_compra,
+            'observaciones' => $request->observaciones,
+        ]);
+
+        return redirect()->route('reportes.barras')->with('success', 'Producto actualizado exitosamente.');
     }
 
     public function destroy(Producto $producto)
