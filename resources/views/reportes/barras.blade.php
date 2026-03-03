@@ -199,7 +199,7 @@
             </button>
         </div>
 
-        <form method="POST" action="{{ route('productos.store') }}" class="px-6 py-5 space-y-4">
+        <form method="POST" action="{{ route('reportes.barras.guardar_producto') }}" class="px-6 py-5 space-y-4">
             @csrf
             <input type="hidden" name="categoria_id" value="{{ \App\Models\Categoria::where('codigo', 'BR')->first()->id ?? '' }}">
             

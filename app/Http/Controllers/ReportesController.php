@@ -84,6 +84,89 @@ class ReportesController extends Controller
     }
 
     /**
+     * Guardar nuevo producto desde el formulario de Barras
+     */
+    public function guardarProductoBarra(Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required|string|max:50|unique:productos,codigo',
+            'descripcion' => 'required|string',
+            'componente_id' => 'nullable|exists:componentes,id',
+            'categoria_id' => 'nullable|exists:categorias,id',
+            'familia_id' => 'nullable|exists:familias,id',
+            'unidad_medida_id' => 'nullable|exists:unidades_medida,id',
+            'ubicacion_id' => 'nullable|exists:ubicaciones,id',
+            'numero_requisicion' => 'nullable|string|max:50',
+            'numero_parte' => 'nullable|string|max:100',
+            'dimensiones' => 'nullable|string|max:100',
+            'cantidad_entrada' => 'nullable|numeric|min:0',
+            'cantidad_fisica' => 'nullable|numeric|min:0',
+            'factura' => 'nullable|string|max:50',
+            'orden_compra' => 'nullable|string|max:50',
+            'observaciones' => 'nullable|string',
+        ]);
+
+        try {
+            // Obtener valores por defecto
+            $componenteDefault = \App\Models\Componente::firstOrCreate(
+                ['codigo' => 'X'],
+                ['nombre' => 'Sin Componente', 'descripcion' => 'Componente por defecto']
+            );
+            
+            $categoriaBarras = \App\Models\Categoria::where('codigo', 'BR')->first();
+            if (!$categoriaBarras) {
+                $categoriaBarras = \App\Models\Categoria::firstOrCreate(
+                    ['codigo' => 'BR'],
+                    ['descripcion' => 'Barras']
+                );
+            }
+            
+            $familiaDefault = \App\Models\Familia::firstOrCreate(
+                ['codigo' => '000'],
+                ['descripcion' => 'Familia por defecto']
+            );
+            
+            $unidadMedidaDefault = \App\Models\UnidadMedida::firstOrCreate(
+                ['codigo' => 'PZA'],
+                ['nombre' => 'PIEZA', 'descripcion' => 'Unidad por defecto']
+            );
+
+            // Preparar datos usando valores por defecto cuando sea necesario
+            $codigo = $request->codigo;
+            $consecutivo = strlen($codigo) >= 10 ? substr($codigo, -4) : '0001';
+
+            $data = [
+                'codigo' => $codigo,
+                'descripcion' => $request->descripcion,
+                'componente_id' => $request->componente_id ?? $componenteDefault->id,
+                'categoria_id' => $request->categoria_id ?? $categoriaBarras->id,
+                'familia_id' => $request->familia_id ?? $familiaDefault->id,
+                'consecutivo' => $consecutivo,
+                'unidad_medida_id' => $request->unidad_medida_id ?? $unidadMedidaDefault->id,
+                'ubicacion_id' => $request->ubicacion_id,
+                'numero_requisicion' => $request->numero_requisicion,
+                'numero_parte' => $request->numero_parte,
+                'dimensiones' => $request->dimensiones,
+                'cantidad_entrada' => $request->cantidad_entrada ?? 0,
+                'cantidad_fisica' => $request->cantidad_fisica ?? 0,
+                'cantidad_salida' => 0,
+                'factura' => $request->factura,
+                'orden_compra' => $request->orden_compra,
+                'observaciones' => $request->observaciones,
+                'moneda' => 'MXN',
+            ];
+
+            $producto = Producto::create($data);
+            
+            return redirect()->route('reportes.barras')
+                ->with('success', "Producto {$producto->codigo} creado exitosamente en categoría Barras");
+        } catch (\Exception $e) {
+            return redirect()->route('reportes.barras')
+                ->with('error', 'Error al crear el producto: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Concentrado de Requisiciones del Centro de Operaciones
      */
     public function requisiciones(Request $request)

@@ -13,6 +13,11 @@ Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
 
+// Login route (redirects to Google OAuth)
+Route::get('/login', function () {
+    return redirect()->route('google.redirect');
+})->name('login');
+
 // Google OAuth Routes
 Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('google.redirect');
 Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
@@ -49,6 +54,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/requisiciones',      [ReportesController::class, 'requisiciones'])->name('requisiciones');
         Route::get('/barras',             [ReportesController::class, 'barras'])->name('barras');
         Route::post('/barras/importar',   [ReportesController::class, 'importarBarras'])->name('barras.importar');
+        Route::post('/barras/guardar-producto', [ReportesController::class, 'guardarProductoBarra'])->name('barras.guardar_producto');
         Route::delete('/barras/borrar',   [ReportesController::class, 'borrarBarras'])->name('barras.borrar');
         Route::get('/resguardo',          [ReportesController::class, 'resguardo'])->name('resguardo');
         Route::get('/no-conforme',        [ReportesController::class, 'noConforme'])->name('no_conforme');
