@@ -30,13 +30,22 @@
             <h1 class="text-xl font-bold text-gray-800">Entradas</h1>
             <p class="text-xs text-gray-500 mt-0.5">{{ number_format($registros->total()) }} registros encontrados</p>
         </div>
-        <button onclick="abrirModalCargaMasiva()" 
-            class="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl shadow transition hover:bg-green-700 active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-            </svg>
-            Carga Masiva Excel
-        </button>
+        <div class="flex gap-2">
+            <button onclick="abrirModalNuevoProducto()" 
+                class="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl shadow transition hover:bg-indigo-700 active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nuevo Producto
+            </button>
+            <button onclick="abrirModalCargaMasiva()" 
+                class="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl shadow transition hover:bg-green-700 active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                Carga Masiva Excel
+            </button>
+        </div>
     </div>
 
     {{-- Buscador --}}
@@ -442,8 +451,367 @@
     </div>
 </div>
 
+{{-- ═══════════════════════════════════════════════════════════════════════════════
+     MODAL: Nuevo Producto
+═══════════════════════════════════════════════════════════════════════════════ --}}
+<div id="modalNuevoProducto" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Nuevo Producto</h3>
+                    <p class="text-xs text-blue-100">Completa la información del producto</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalNuevoProducto()" class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Content --}}
+        <div class="flex-1 overflow-y-auto px-6 py-5">
+            <form id="formNuevoProducto" method="POST" action="{{ route('reportes.entradas.guardar_producto') }}">
+                @csrf
+                
+                {{-- Sección: Identificación --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                        </svg>
+                        Identificación
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Código <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="codigo" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Código único del producto">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Consecutivo <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="consecutivo" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Número consecutivo">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Clasificación --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        Clasificación
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Componente <span class="text-red-500">*</span>
+                            </label>
+                            <select name="componente_id" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($componentes as $comp)
+                                    <option value="{{ $comp->id }}">{{ $comp->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Categoría <span class="text-red-500">*</span>
+                            </label>
+                            <select name="categoria_id" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($categorias as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Familia <span class="text-red-500">*</span>
+                            </label>
+                            <select name="familia_id" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($familias as $fam)
+                                    <option value="{{ $fam->id }}">{{ $fam->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Unidad de Medida <span class="text-red-500">*</span>
+                            </label>
+                            <select name="unidad_medida_id" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($unidadesMedida as $um)
+                                    <option value="{{ $um->id }}">{{ $um->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Descripción y Ubicación --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Descripción y Ubicación
+                    </h4>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Descripción <span class="text-red-500">*</span>
+                            </label>
+                            <textarea name="descripcion" required rows="2"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Descripción detallada del producto"></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                    Ubicación
+                                </label>
+                                <select name="ubicacion_id" 
+                                    class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                    <option value="">Sin ubicación...</option>
+                                    @foreach($ubicaciones as $ubi)
+                                        <option value="{{ $ubi->id }}">{{ $ubi->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                    Dimensiones
+                                </label>
+                                <input type="text" name="dimensiones" 
+                                    class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                    placeholder="Ej: 10x20x30 cm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Cantidades --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                        Cantidades
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Cantidad Entrada
+                            </label>
+                            <input type="number" name="cantidad_entrada" value="0" step="0.01" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Cantidad Salida
+                            </label>
+                            <input type="number" name="cantidad_salida" value="0" step="0.01" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Cantidad Física
+                            </label>
+                            <input type="number" name="cantidad_fisica" value="0" step="0.01" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Fechas --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Fechas
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Fecha Entrada
+                            </label>
+                            <input type="date" name="fecha_entrada" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Fecha Salida
+                            </label>
+                            <input type="date" name="fecha_salida" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Fecha Vencimiento
+                            </label>
+                            <input type="date" name="fecha_vencimiento" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Información Financiera --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Información Financiera
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Precio Unitario
+                            </label>
+                            <input type="number" name="precio_unitario" step="0.01" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Moneda
+                            </label>
+                            <select name="moneda" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
+                                <option value="MXN" selected>MXN - Peso Mexicano</option>
+                                <option value="USD">USD - Dólar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Factura
+                            </label>
+                            <input type="text" name="factura" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Número de factura">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Referencias --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Referencias y Documentos
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Número de Requisición
+                            </label>
+                            <input type="text" name="numero_requisicion" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Número de requisición">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Número de Parte
+                            </label>
+                            <input type="text" name="numero_parte" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Número de parte">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Orden de Compra
+                            </label>
+                            <input type="text" name="orden_compra" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Número de orden de compra">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                Hoja de Seguridad
+                            </label>
+                            <input type="text" name="hoja_seguridad" 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                                placeholder="Hoja de seguridad">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Observaciones --}}
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2">
+                        <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Observaciones
+                    </h4>
+                    <div>
+                        <textarea name="observaciones" rows="3"
+                            class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                            placeholder="Observaciones adicionales (opcional)"></textarea>
+                    </div>
+                </div>
+
+                {{-- Botones de acción --}}
+                <div class="flex justify-end gap-3 pt-4 border-t-2 border-gray-200">
+                    <button type="button" onclick="cerrarModalNuevoProducto()"
+                        class="px-6 py-2.5 bg-white border-2 border-gray-300 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-bold rounded-xl transition-all hover:from-blue-700 hover:to-blue-600 shadow-lg hover:shadow-xl flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Guardar Producto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL NUEVO PRODUCTO
+═══════════════════════════════════════════════════════════════════ */
+function abrirModalNuevoProducto() {
+    const modal = document.getElementById('modalNuevoProducto');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalNuevoProducto() {
+    const modal = document.getElementById('modalNuevoProducto');
+    modal.classList.replace('flex', 'hidden');
+    document.body.style.overflow = '';
+    document.getElementById('formNuevoProducto').reset();
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MODAL CARGA MASIVA CON PREVIEW - ENTRADAS
 ═══════════════════════════════════════════════════════════════════ */

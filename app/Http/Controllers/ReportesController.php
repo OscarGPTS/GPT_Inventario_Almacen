@@ -30,7 +30,57 @@ class ReportesController extends Controller
         }
 
         $registros = $query->paginate(50)->withQueryString();
-        return view('reportes.entradas', compact('registros'));
+        
+        // Catálogos para el formulario de nuevo producto
+        $componentes = \App\Models\Componente::orderBy('codigo')->get();
+        $categorias = \App\Models\Categoria::orderBy('codigo')->get();
+        $familias = \App\Models\Familia::orderBy('codigo')->get();
+        $unidadesMedida = \App\Models\UnidadMedida::orderBy('codigo')->get();
+        $ubicaciones = \App\Models\Ubicacion::orderBy('codigo')->get();
+        
+        return view('reportes.entradas', compact('registros', 'componentes', 'categorias', 'familias', 'unidadesMedida', 'ubicaciones'));
+    }
+
+    /**
+     * Guardar nuevo producto desde el formulario
+     */
+    public function guardarProducto(Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required|string|max:50|unique:productos,codigo',
+            'componente_id' => 'required|exists:componentes,id',
+            'categoria_id' => 'required|exists:categorias,id',
+            'familia_id' => 'required|exists:familias,id',
+            'consecutivo' => 'required|string|max:10',
+            'descripcion' => 'required|string',
+            'unidad_medida_id' => 'required|exists:unidades_medida,id',
+            'ubicacion_id' => 'nullable|exists:ubicaciones,id',
+            'cantidad_entrada' => 'nullable|integer|min:0',
+            'cantidad_salida' => 'nullable|integer|min:0',
+            'cantidad_fisica' => 'nullable|integer|min:0',
+            'fecha_entrada' => 'nullable|date',
+            'fecha_salida' => 'nullable|date',
+            'precio_unitario' => 'nullable|numeric|min:0',
+            'moneda' => 'nullable|in:MXN,USD',
+            'factura' => 'nullable|string|max:50',
+            'numero_requisicion' => 'nullable|string|max:50',
+            'numero_parte' => 'nullable|string|max:100',
+            'dimensiones' => 'nullable|string|max:100',
+            'orden_compra' => 'nullable|string|max:50',
+            'observaciones' => 'nullable|string',
+            'fecha_vencimiento' => 'nullable|date',
+            'hoja_seguridad' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $producto = Producto::create($request->all());
+            
+            return redirect()->route('reportes.entradas')
+                ->with('success', "Producto {$producto->codigo} creado exitosamente");
+        } catch (\Exception $e) {
+            return redirect()->route('reportes.entradas')
+                ->with('error', 'Error al crear el producto: ' . $e->getMessage());
+        }
     }
 
     /**
