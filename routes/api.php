@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ProductoApiController;
 use App\Http\Controllers\Api\MovimientoApiController;
 use App\Http\Controllers\Api\CatalogoApiController;
+use App\Http\Controllers\Api\SolicitudApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,6 +42,12 @@ Route::prefix('v1')->group(function () {
     
     // Movimientos por producto
     Route::get('/productos/{producto_id}/movimientos', [MovimientoApiController::class, 'porProducto'])->name('api.productos.movimientos');
+    
+    // Solicitudes (Requisiciones)
+    Route::get('/solicitudes', [SolicitudApiController::class, 'index'])->name('api.solicitudes.index');
+    Route::post('/solicitudes', [SolicitudApiController::class, 'store'])->name('api.solicitudes.store');
+    Route::get('/solicitudes/{id}', [SolicitudApiController::class, 'show'])->name('api.solicitudes.show');
+    Route::patch('/solicitudes/{id}/estado', [SolicitudApiController::class, 'updateEstado'])->name('api.solicitudes.updateEstado');
 });
 
 // Rutas protegidas (requieren autenticación con Sanctum)
