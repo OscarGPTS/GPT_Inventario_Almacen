@@ -52,13 +52,13 @@
                 </svg>
                 Carga Masiva
             </button>
-            <button onclick="abrirModalBorrar()" 
+           {{--  <button onclick="abrirModalBorrar()" 
                 class="flex items-center gap-2 px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl shadow transition hover:bg-amber-700 active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
                 </svg>
                 Ocultar Todo
-            </button>
+            </button> --}}
             <button onclick="abrirModalNuevo()" 
                 class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
                 style="background-color:{{ $acento }}">
@@ -458,7 +458,7 @@
 <div id="modalCargaMasiva" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         {{-- Header --}}
-        <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 text-white">
+        <div class="flex items-center justify-between px-6 py-4 bg-[#4A568D] text-white">
             <div class="flex items-center gap-3">
                 <div class="bg-white/20 p-2 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -467,7 +467,7 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-lg">Carga Masiva - Barras</h3>
-                    <p class="text-xs text-green-100" id="modal_subtitle">Selecciona el archivo Excel para importar</p>
+                    <p class="text-xs text-white" id="modal_subtitle">Selecciona el archivo Excel para importar</p>
                 </div>
             </div>
             <button onclick="cerrarModalCargaMasiva()" class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition">

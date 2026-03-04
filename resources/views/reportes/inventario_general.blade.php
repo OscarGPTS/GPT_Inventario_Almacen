@@ -11,7 +11,8 @@
         </div>
         <div class="flex items-center gap-4">
             <button onclick="abrirModalRequisicion()" 
-                class="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white text-sm font-semibold rounded-xl shadow transition hover:bg-purple-700 active:scale-95">
+                class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
+                style="background-color:#4A568D">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
@@ -102,7 +103,7 @@
 <div id="modalRequisicion" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
         {{-- Header --}}
-        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white bg-purple-600">
+        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white" style="background-color:#4A568D">
             <div class="flex items-center gap-2.5">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
@@ -191,11 +192,11 @@
                     <input type="hidden" name="producto_id" id="req_prod_id">
                     <div id="req_prod_dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-52 overflow-y-auto"></div>
                 </div>
-                <div id="req_prod_preview" class="hidden mt-2 flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-xs">
-                    <svg class="w-3.5 h-3.5 shrink-0 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div id="req_prod_preview" class="hidden mt-2 flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-xs">
+                    <svg class="w-3.5 h-3.5 shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
-                    <span id="req_prod_preview_text" class="font-medium text-purple-800"></span>
+                    <span id="req_prod_preview_text" class="font-medium text-indigo-800"></span>
                 </div>
             </div>
 
@@ -234,7 +235,8 @@
                     Cancelar
                 </button>
                 <button type="submit" form="formRequisicion" id="btnGuardarReq"
-                    class="px-6 py-2 bg-purple-600 text-white text-sm font-semibold rounded-xl transition hover:bg-purple-700 active:scale-95 flex items-center gap-2">
+                    class="px-6 py-2 text-white text-sm font-semibold rounded-xl transition hover:opacity-90 active:scale-95 flex items-center gap-2"
+                    style="background-color:#4A568D">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
@@ -326,7 +328,7 @@ function crearTypeaheadReq({ inputId, dropdownId, hiddenId, endpoint, renderItem
 
         items.forEach(item => {
             const div = document.createElement('div');
-            div.className = 'px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 cursor-pointer flex items-center gap-2';
+            div.className = 'px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 cursor-pointer flex items-center gap-2';
             div.innerHTML = renderItem(item, q);
             div.addEventListener('mousedown', e => {
                 e.preventDefault();
