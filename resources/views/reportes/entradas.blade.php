@@ -28,7 +28,13 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-bold text-gray-800">Entradas</h1>
-            <p class="text-xs text-gray-500 mt-0.5">{{ number_format($registros->total()) }} registros encontrados</p>
+            <p class="text-xs text-gray-500 mt-0.5">
+                {{ number_format($registros->total()) }} registros
+                @if(request()->hasAny(['search','componente_id','categoria_id','familia_id','unidad_medida_id','ubicacion_id']))
+                    <span class="text-indigo-600 font-semibold">· filtrados</span>
+                @endif
+                <span class="text-gray-400">· con existencia &gt; 0 · más recientes primero</span>
+            </p>
         </div>
         <div class="flex gap-2">
             <button onclick="abrirModalRequisicion()" 
@@ -57,24 +63,19 @@
         </div>
     </div>
 
-    {{-- Buscador --}}
-    <form method="GET" action="{{ route('reportes.entradas') }}" class="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div class="px-4 py-3 flex gap-3 items-center">
-            <div class="flex-1 relative">
+    {{-- Filtros --}}
+    <form method="GET" action="{{ route('reportes.entradas') }}" id="formFiltros" class="bg-white rounded-xl shadow-sm border border-gray-200">
+
+        {{-- Fila 1: búsqueda de texto + botones --}}
+        <div class="px-4 pt-3 pb-2 flex flex-wrap gap-3 items-center border-b border-gray-100">
+            <div class="flex-1 min-w-[200px] relative">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    name="search" 
-                    value="{{ request('search') }}"
-                    placeholder="Buscar por c&oacute;digo, descripci&oacute;n, ubicaci&oacute;n..."
+                <input type="text" name="search" value="{{ request('search') }}"
+                    placeholder="Buscar por código, descripción, factura, observaciones..."
                     class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition"
-                    autocomplete="off"
-                    onkeyup="buscarDinamico(event)">
-                
-                {{-- Dropdown de Sugerencias --}}
+                    autocomplete="off" id="searchInput" onkeyup="buscarDinamico(event)">
                 <div id="suggestionBox" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
                     <div id="loadingSuggestions" class="hidden px-4 py-3 text-sm text-gray-500 flex items-center gap-2">
                         <svg class="animate-spin h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
@@ -87,23 +88,94 @@
                 </div>
             </div>
             <button type="submit"
-                class="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+                class="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90 shrink-0"
                 style="background-color:#4A568D;">
                 Buscar
             </button>
-            @if(request('search'))
+            @if(request()->hasAny(['search','componente_id','categoria_id','familia_id','unidad_medida_id','ubicacion_id']))
             <a href="{{ route('reportes.entradas') }}"
-               class="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition">
-                Limpiar
+               class="px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition shrink-0 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Limpiar filtros
             </a>
             @endif
         </div>
-        
-        {{-- Tip de búsqueda --}}
-        <div class="px-4 pb-3 pt-0">
-            <p class="text-xs text-gray-500">
-                Escribe al menos 2 caracteres para ver sugerencias en tiempo real
-            </p>
+
+        {{-- Fila 2: filtros por catálogo --}}
+        <div class="px-4 py-2.5 flex flex-wrap gap-2 items-center">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide shrink-0 mr-1">Filtrar por:</span>
+
+            <select name="componente_id" onchange="document.getElementById('formFiltros').submit()"
+                class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white {{ request('componente_id') ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600' }}">
+                <option value="">Componente</option>
+                @foreach($componentes as $c)
+                    <option value="{{ $c->id }}" {{ request('componente_id') == $c->id ? 'selected' : '' }}>
+                        {{ $c->codigo }} – {{ $c->descripcion }}
+                    </option>
+                @endforeach
+            </select>
+
+            <select name="categoria_id" onchange="document.getElementById('formFiltros').submit()"
+                class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white {{ request('categoria_id') ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600' }}">
+                <option value="">Categoría</option>
+                @foreach($categorias as $c)
+                    <option value="{{ $c->id }}" {{ request('categoria_id') == $c->id ? 'selected' : '' }}>
+                        {{ $c->codigo }} – {{ $c->descripcion }}
+                    </option>
+                @endforeach
+            </select>
+
+            <select name="familia_id" onchange="document.getElementById('formFiltros').submit()"
+                class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white {{ request('familia_id') ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600' }}">
+                <option value="">Familia</option>
+                @foreach($familias as $f)
+                    <option value="{{ $f->id }}" {{ request('familia_id') == $f->id ? 'selected' : '' }}>
+                        {{ $f->codigo }} – {{ $f->descripcion }}
+                    </option>
+                @endforeach
+            </select>
+
+            <select name="unidad_medida_id" onchange="document.getElementById('formFiltros').submit()"
+                class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white {{ request('unidad_medida_id') ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600' }}">
+                <option value="">Unidad de Medida</option>
+                @foreach($unidadesMedida as $u)
+                    <option value="{{ $u->id }}" {{ request('unidad_medida_id') == $u->id ? 'selected' : '' }}>
+                        {{ $u->codigo }} – {{ $u->descripcion }}
+                    </option>
+                @endforeach
+            </select>
+
+            <select name="ubicacion_id" onchange="document.getElementById('formFiltros').submit()"
+                class="border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white {{ request('ubicacion_id') ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-600' }}">
+                <option value="">Ubicación</option>
+                @foreach($ubicaciones as $u)
+                    <option value="{{ $u->id }}" {{ request('ubicacion_id') == $u->id ? 'selected' : '' }}>
+                        {{ $u->codigo }} – {{ $u->descripcion }}
+                    </option>
+                @endforeach
+            </select>
+
+            {{-- Badges de filtros activos --}}
+            @foreach([
+                'componente_id'    => ['label' => 'Componente',     'col' => $componentes],
+                'categoria_id'     => ['label' => 'Categoría',      'col' => $categorias],
+                'familia_id'       => ['label' => 'Familia',        'col' => $familias],
+                'unidad_medida_id' => ['label' => 'UM',             'col' => $unidadesMedida],
+                'ubicacion_id'     => ['label' => 'Ubicación',      'col' => $ubicaciones],
+            ] as $param => $meta)
+                @if(request($param))
+                    @php $item = $meta['col']->firstWhere('id', request($param)); @endphp
+                    @if($item)
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold">
+                        {{ $meta['label'] }}: {{ $item->codigo }}
+                        <a href="{{ request()->fullUrlWithQuery([$param => null]) }}"
+                           class="ml-0.5 hover:text-indigo-900" title="Quitar filtro">×</a>
+                    </span>
+                    @endif
+                @endif
+            @endforeach
         </div>
     </form>
 
@@ -465,7 +537,7 @@
      MODAL: Nuevo Producto
 ═══════════════════════════════════════════════════════════════════════════════ --}}
 <div id="modalNuevoProducto" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
         {{-- Header --}}
         <div class="flex items-center justify-between px-6 py-4 text-white" style="background-color:#4A568D">
             <div class="flex items-center gap-3">
@@ -503,18 +575,20 @@
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
                                 Código <span class="text-red-500">*</span>
+                                <span class="text-xs font-normal text-indigo-500 ml-1">(se calcula automáticamente)</span>
                             </label>
-                            <input type="text" name="codigo" required 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
-                                placeholder="Código único del producto">
+                            <input type="text" name="codigo" id="input_codigo" required readonly
+                                class="w-full border-2 border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2 text-sm font-mono font-bold text-indigo-700 cursor-not-allowed"
+                                placeholder="Se generará al seleccionar Componente, Categoría y Familia">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
                                 Consecutivo <span class="text-red-500">*</span>
+                                <span class="text-xs font-normal text-indigo-500 ml-1">(se calcula automáticamente)</span>
                             </label>
-                            <input type="text" name="consecutivo" required 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
-                                placeholder="Número consecutivo">
+                            <input type="text" name="consecutivo" id="input_consecutivo" required readonly
+                                class="w-full border-2 border-indigo-200 bg-indigo-50 rounded-lg px-3 py-2 text-sm font-mono font-bold text-indigo-700 cursor-not-allowed"
+                                placeholder="Ej: 0022">
                         </div>
                     </div>
                 </div>
@@ -532,11 +606,12 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
                                 Componente <span class="text-red-500">*</span>
                             </label>
-                            <select name="componente_id" required 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                            <select name="componente_id" id="sel_componente" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                                onchange="calcularCodigo()">
                                 <option value="">Selecciona...</option>
                                 @foreach($componentes as $comp)
-                                    <option value="{{ $comp->id }}">{{ $comp->nombre }}</option>
+                                    <option value="{{ $comp->id }}" data-codigo="{{ $comp->codigo }}">{{ $comp->codigo }} – {{ $comp->descripcion }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -544,11 +619,12 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
                                 Categoría <span class="text-red-500">*</span>
                             </label>
-                            <select name="categoria_id" required 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                            <select name="categoria_id" id="sel_categoria" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                                onchange="calcularCodigo()">
                                 <option value="">Selecciona...</option>
                                 @foreach($categorias as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->nombre }}</option>
+                                    <option value="{{ $cat->id }}" data-codigo="{{ $cat->codigo }}">{{ $cat->codigo }} – {{ $cat->descripcion }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -556,11 +632,12 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
                                 Familia <span class="text-red-500">*</span>
                             </label>
-                            <select name="familia_id" required 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                            <select name="familia_id" id="sel_familia" required 
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
+                                onchange="calcularCodigo()">
                                 <option value="">Selecciona...</option>
                                 @foreach($familias as $fam)
-                                    <option value="{{ $fam->id }}">{{ $fam->nombre }}</option>
+                                    <option value="{{ $fam->id }}" data-codigo="{{ $fam->codigo }}">{{ $fam->codigo }} – {{ $fam->descripcion }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -572,7 +649,7 @@
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                                 <option value="">Selecciona...</option>
                                 @foreach($unidadesMedida as $um)
-                                    <option value="{{ $um->id }}">{{ $um->nombre }}</option>
+                                    <option value="{{ $um->id }}">{{ $um->codigo }} – {{ $um->descripcion }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -599,19 +676,19 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                    Ubicación
+                                    Ubicación <span class="text-gray-400 font-normal">(opcional)</span>
                                 </label>
                                 <select name="ubicacion_id" 
                                     class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                                     <option value="">Sin ubicación...</option>
                                     @foreach($ubicaciones as $ubi)
-                                        <option value="{{ $ubi->id }}">{{ $ubi->nombre }}</option>
+                                        <option value="{{ $ubi->id }}">{{ $ubi->codigo }} – {{ $ubi->descripcion }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                    Dimensiones
+                                    Dimensiones <span class="text-gray-400 font-normal">(opcional)</span>
                                 </label>
                                 <input type="text" name="dimensiones" 
                                     class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
@@ -629,29 +706,24 @@
                         </svg>
                         Cantidades
                     </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Cantidad Entrada
+                                Cantidad Entrada <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
-                            <input type="number" name="cantidad_entrada" value="0" step="0.01" 
+                            <input type="number" name="cantidad_entrada" id="input_cantidad_entrada" value="0" step="0.01"
+                                oninput="document.getElementById('input_cantidad_fisica').value = this.value"
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                         </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Cantidad Salida
-                            </label>
-                            <input type="number" name="cantidad_salida" value="0" step="0.01" 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Cantidad Física
-                            </label>
-                            <input type="number" name="cantidad_fisica" value="0" step="0.01" 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
+                        <div class="flex items-end">
+                            <p class="text-xs text-gray-500 italic pb-2">
+                                La <strong>Cantidad Física</strong> se establecerá igual a la Cantidad Entrada automáticamente.
+                            </p>
                         </div>
                     </div>
+                    {{-- Campos ocultos: valores derivados --}}
+                    <input type="hidden" name="cantidad_salida" value="0">
+                    <input type="hidden" name="cantidad_fisica" id="input_cantidad_fisica" value="0">
                 </div>
 
                 {{-- Sección: Fechas --}}
@@ -662,24 +734,17 @@
                         </svg>
                         Fechas
                     </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Fecha Entrada
+                                Fecha Entrada <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="date" name="fecha_entrada" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Fecha Salida
-                            </label>
-                            <input type="date" name="fecha_salida" 
-                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Fecha Vencimiento
+                                Fecha Vencimiento <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="date" name="fecha_vencimiento" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
@@ -698,7 +763,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Precio Unitario
+                                Precio Unitario <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="number" name="precio_unitario" step="0.01" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
@@ -706,7 +771,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Moneda
+                                Moneda <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <select name="moneda" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400">
@@ -716,7 +781,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Factura
+                                Factura <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="text" name="factura" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
@@ -736,7 +801,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Número de Requisición
+                                Número de Requisición <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="text" name="numero_requisicion" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
@@ -744,7 +809,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Número de Parte
+                                Número de Parte <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="text" name="numero_parte" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
@@ -752,7 +817,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Orden de Compra
+                                Orden de Compra <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="text" name="orden_compra" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
@@ -760,7 +825,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">
-                                Hoja de Seguridad
+                                Hoja de Seguridad <span class="text-gray-400 font-normal">(opcional)</span>
                             </label>
                             <input type="text" name="hoja_seguridad" 
                                 class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400"
@@ -821,6 +886,45 @@ function cerrarModalNuevoProducto() {
     modal.classList.replace('flex', 'hidden');
     document.body.style.overflow = '';
     document.getElementById('formNuevoProducto').reset();
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   AUTO-CÁLCULO DE CÓDIGO Y CONSECUTIVO
+═══════════════════════════════════════════════════════════════════ */
+function calcularCodigo() {
+    const compSel = document.getElementById('sel_componente');
+    const catSel  = document.getElementById('sel_categoria');
+    const famSel  = document.getElementById('sel_familia');
+    const inputCodigo = document.getElementById('input_codigo');
+    const inputCons   = document.getElementById('input_consecutivo');
+
+    if (!compSel.value || !catSel.value || !famSel.value) {
+        inputCodigo.value = '';
+        inputCons.value   = '';
+        inputCodigo.placeholder = 'Se generará al seleccionar Componente, Categoría y Familia';
+        return;
+    }
+
+    inputCodigo.value = '…';
+    inputCons.value   = '…';
+
+    const url = `{{ route('reportes.entradas.proximo_consecutivo') }}?componente_id=${compSel.value}&categoria_id=${catSel.value}&familia_id=${famSel.value}`;
+
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                inputCodigo.value = '';
+                inputCons.value   = '';
+                return;
+            }
+            inputCodigo.value = data.codigo;
+            inputCons.value   = data.siguiente;
+        })
+        .catch(() => {
+            inputCodigo.value = '';
+            inputCons.value   = '';
+        });
 }
 
 /* ═══════════════════════════════════════════════════════════════════

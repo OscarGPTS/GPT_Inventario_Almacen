@@ -16,8 +16,10 @@ class ReportesController extends Controller
     public function entradas(Request $request)
     {
         $query = Producto::with(['componente', 'categoria', 'familia', 'unidadMedida', 'ubicacion'])
-            ->orderBy('codigo');
+            ->where('cantidad_fisica', '>', 0)
+            ->orderByDesc('created_at');
 
+        // Búsqueda de texto general
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
@@ -29,16 +31,61 @@ class ReportesController extends Controller
             });
         }
 
+        // Filtros por catálogo
+        if ($request->filled('componente_id')) {
+            $query->where('componente_id', $request->componente_id);
+        }
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', $request->categoria_id);
+        }
+        if ($request->filled('familia_id')) {
+            $query->where('familia_id', $request->familia_id);
+        }
+        if ($request->filled('unidad_medida_id')) {
+            $query->where('unidad_medida_id', $request->unidad_medida_id);
+        }
+        if ($request->filled('ubicacion_id')) {
+            $query->where('ubicacion_id', $request->ubicacion_id);
+        }
+
         $registros = $query->paginate(50)->withQueryString();
-        
-        // Catálogos para el formulario de nuevo producto
-        $componentes = \App\Models\Componente::orderBy('codigo')->get();
-        $categorias = \App\Models\Categoria::orderBy('codigo')->get();
-        $familias = \App\Models\Familia::orderBy('codigo')->get();
+
+        // Catálogos para filtros y formulario de nuevo producto
+        $componentes   = \App\Models\Componente::orderBy('codigo')->get();
+        $categorias    = \App\Models\Categoria::orderBy('codigo')->get();
+        $familias      = \App\Models\Familia::orderBy('codigo')->get();
         $unidadesMedida = \App\Models\UnidadMedida::orderBy('codigo')->get();
-        $ubicaciones = \App\Models\Ubicacion::orderBy('codigo')->get();
-        
+        $ubicaciones   = \App\Models\Ubicacion::orderBy('codigo')->get();
+
         return view('reportes.entradas', compact('registros', 'componentes', 'categorias', 'familias', 'unidadesMedida', 'ubicaciones'));
+    }
+
+    /**
+     * Devuelve el próximo consecutivo y código dado componente+categoría+familia
+     */
+    public function proximoConsecutivo(Request $request)
+    {
+        $comp = \App\Models\Componente::find($request->input('componente_id'));
+        $cat  = \App\Models\Categoria::find($request->input('categoria_id'));
+        $fam  = \App\Models\Familia::find($request->input('familia_id'));
+
+        if (!$comp || !$cat || !$fam) {
+            return response()->json(['error' => 'Parámetros incompletos'], 422);
+        }
+
+        $prefix = $comp->codigo . $cat->codigo . $fam->codigo;
+
+        $maxCons = Producto::where('codigo', 'like', $prefix . '%')
+            ->selectRaw('MAX(CAST(consecutivo AS UNSIGNED)) as max_cons')
+            ->value('max_cons');
+
+        $siguiente = str_pad((int)($maxCons ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'prefix'    => $prefix,
+            'siguiente' => $siguiente,
+            'codigo'    => $prefix . $siguiente,
+        ]);
     }
 
     /**
