@@ -121,31 +121,51 @@ class SolicitudController extends Controller
             'estado' => 'required|in:pendiente,aprobada,entregada,cancelada',
         ]);
 
-        $estadoAnterior = $solicitud->estado;
-        $solicitud->estado = $validated['estado'];
+        $nuevo    = $validated['estado'];
+        $anterior = $solicitud->estado;
+
+        $solicitud->estado = $nuevo;
         $solicitud->save();
 
-        // Si la solicitud es entregada, registrar la salida del producto
-        if ($validated['estado'] === 'entregada' && $estadoAnterior !== 'entregada') {
-            $producto = $solicitud->producto;
-            $cantidadAnterior = $producto->cantidad_fisica;
-            $producto->cantidad_salida += $solicitud->cantidad;
-            $producto->cantidad_fisica = max(0, $producto->cantidad_fisica - $solicitud->cantidad);
-            $producto->fecha_salida = now();
-            $producto->save();
+        $producto = $solicitud->producto;
+        $cantidad = (float) $solicitud->cantidad;
 
-            // Registrar movimiento
-            Movimiento::create([
-                'producto_id' => $producto->id,
-                'usuario_id' => auth()->id(),
-                'tipo_movimiento' => 'salida',
-                'cantidad' => $solicitud->cantidad,
-                'cantidad_anterior' => $cantidadAnterior,
-                'cantidad_nueva' => $producto->cantidad_fisica,
-                'solicitud_id' => $solicitud->id,
-                'descripcion' => "Salida por solicitud {$solicitud->folio} - {$solicitud->solicitante}",
-                'referencia' => $solicitud->folio,
-            ]);
+        if ($producto && $cantidad > 0) {
+            // Reservar al aprobar
+            if ($nuevo === 'aprobada' && $anterior !== 'aprobada') {
+                $producto->cantidad_apartada = max(0, (float)$producto->cantidad_apartada + $cantidad);
+                $producto->save();
+            }
+
+            // Liberar reserva al cancelar o regresar a pendiente desde aprobada
+            if (in_array($nuevo, ['cancelada', 'pendiente']) && $anterior === 'aprobada') {
+                $producto->cantidad_apartada = max(0, (float)$producto->cantidad_apartada - $cantidad);
+                $producto->save();
+            }
+
+            // Entregar: descontar stock y liberar reserva
+            if ($nuevo === 'entregada' && $anterior !== 'entregada') {
+                $cantidadAnterior = (float) $producto->cantidad_fisica;
+                $producto->cantidad_salida  = (float)$producto->cantidad_salida  + $cantidad;
+                $producto->cantidad_fisica  = max(0, $cantidadAnterior - $cantidad);
+                $producto->fecha_salida     = now();
+                if ($anterior === 'aprobada') {
+                    $producto->cantidad_apartada = max(0, (float)$producto->cantidad_apartada - $cantidad);
+                }
+                $producto->save();
+
+                Movimiento::create([
+                    'producto_id'      => $producto->id,
+                    'usuario_id'       => auth()->id(),
+                    'tipo_movimiento'  => 'salida',
+                    'cantidad'         => $cantidad,
+                    'cantidad_anterior'=> $cantidadAnterior,
+                    'cantidad_nueva'   => $producto->cantidad_fisica,
+                    'solicitud_id'     => $solicitud->id,
+                    'descripcion'      => "Salida por solicitud {$solicitud->folio} - {$solicitud->solicitante}",
+                    'referencia'       => $solicitud->folio,
+                ]);
+            }
         }
 
         return redirect()->route('solicitudes.show', $solicitud)

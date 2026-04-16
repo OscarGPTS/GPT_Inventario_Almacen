@@ -24,6 +24,7 @@ class Producto extends Model
         'cantidad_entrada',
         'cantidad_salida',
         'cantidad_fisica',
+        'cantidad_apartada',
         'fecha_entrada',
         'fecha_salida',
         'precio_unitario',
@@ -44,6 +45,7 @@ class Producto extends Model
         'fecha_vencimiento'=> 'date',
         'fecha_nc'         => 'date',
         'precio_unitario'  => 'decimal:2',
+        'cantidad_apartada'=> 'decimal:2',
         'no_conforme'      => 'boolean',
     ];
 

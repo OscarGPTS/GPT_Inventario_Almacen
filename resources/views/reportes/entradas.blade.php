@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Entradas')
+@section('title', 'Inventario')
 
 @section('content')
 <div class="space-y-4">
@@ -27,7 +27,7 @@
     {{-- Encabezado --}}
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-xl font-bold text-gray-800">Entradas</h1>
+            <h1 class="text-xl font-bold text-gray-800">Inventario</h1>
             <p class="text-xs text-gray-500 mt-0.5">
                 {{ number_format($registros->total()) }} registros
                 @if(request()->hasAny(['search','componente_id','categoria_id','familia_id','unidad_medida_id','ubicacion_id']))
@@ -37,14 +37,7 @@
             </p>
         </div>
         <div class="flex gap-2">
-            <button onclick="abrirModalRequisicion()" 
-                class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
-                style="background-color:#4A568D">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                </svg>
-                Nueva Requisición
-            </button>
+
             <button onclick="abrirModalNuevoProducto()" 
                 class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
                 style="background-color:#4A568D">
@@ -53,6 +46,8 @@
                 </svg>
                 Nuevo Producto
             </button>
+
+            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('admin_almacen'))
             <button onclick="abrirModalCargaMasiva()" 
                 class="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl shadow transition hover:bg-green-700 active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,6 +55,7 @@
                 </svg>
                 Carga Masiva Excel
             </button>
+            @endif
         </div>
     </div>
 
@@ -180,9 +176,13 @@
     </form>
 
     {{-- Tabla --}}
+    @php
+        $esAlmacen   = auth()->user()->hasRole('almacenista') || auth()->user()->hasRole('admin_almacen');
+        $puedeEditar = auth()->user()->hasRole('almacenista') || auth()->user()->hasRole('admin_almacen') || auth()->user()->hasRole('admin');
+    @endphp
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto" style="max-height: calc(100vh - 260px); overflow-y: auto;">
-            <table class="w-full text-xs border-collapse" style="min-width:1900px;">
+            <table class="w-full text-xs border-collapse" style="min-width:{{ $esAlmacen ? '2300px' : '1600px' }};">
                 <thead class="sticky top-0 z-10">
                     <tr style="background-color:#4A568D;">
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">CODIGO</th>
@@ -197,17 +197,52 @@
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">FECHA ENTRADA</th>
                         <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">SALIDA</th>
                         <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">FISICO</th>
+                        <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600" title="Reservado por solicitudes aprobadas">APARTADO</th>
+                        <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600" title="Físico menos apartado">DISPONIBLE</th>
+                        @if($esAlmacen)
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">FECHA SALIDA</th>
                         <th class="px-3 py-2.5 text-right text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">P.U</th>
                         <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">MXN/USD</th>
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">FACTURA</th>
+                        @endif
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide border-r border-indigo-600" style="min-width:180px;">DN/NP/OBSERVACI&Oacute;N</th>
+                        @if($esAlmacen)
                         <th class="px-3 py-2.5 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">FECHA DE VENCIMIENTO</th>
-                        <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap">HOJAS DE SEGURIDAD</th>
+                        <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap border-r border-indigo-600">HOJAS DE SEGURIDAD</th>
+                        @endif
+                        <th class="px-3 py-2.5 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap" style="min-width:130px;">OPCIONES</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($registros as $p)
+                    @php
+                        $editData = json_encode([
+                            'id'                 => $p->id,
+                            'codigo'             => $p->codigo,
+                            'consecutivo'        => $p->consecutivo,
+                            'descripcion'        => $p->descripcion,
+                            'componente_id'      => $p->componente_id,
+                            'categoria_id'       => $p->categoria_id,
+                            'familia_id'         => $p->familia_id,
+                            'unidad_medida_id'   => $p->unidad_medida_id,
+                            'ubicacion_id'       => $p->ubicacion_id,
+                            'cantidad_entrada'   => $p->cantidad_entrada,
+                            'cantidad_salida'    => $p->cantidad_salida,
+                            'cantidad_fisica'    => $p->cantidad_fisica,
+                            'fecha_entrada'      => $p->fecha_entrada?->format('Y-m-d'),
+                            'fecha_salida'       => $p->fecha_salida?->format('Y-m-d'),
+                            'precio_unitario'    => $p->precio_unitario,
+                            'moneda'             => $p->moneda ?? 'MXN',
+                            'factura'            => $p->factura,
+                            'numero_requisicion' => $p->numero_requisicion,
+                            'numero_parte'       => $p->numero_parte,
+                            'dimensiones'        => $p->dimensiones,
+                            'orden_compra'       => $p->orden_compra,
+                            'observaciones'      => $p->observaciones,
+                            'fecha_vencimiento'  => $p->fecha_vencimiento?->format('Y-m-d'),
+                            'hoja_seguridad'     => $p->hoja_seguridad,
+                        ]);
+                    @endphp
                     <tr class="hover:bg-blue-50 transition-colors {{ $loop->even ? 'bg-gray-50' : 'bg-white' }}">
                         <td class="px-3 py-2 font-mono font-semibold whitespace-nowrap">
                             <a href="{{ route('productos.show', $p->id) }}" class="hover:underline" style="color:#4A568D;">{{ $p->codigo }}</a>
@@ -225,11 +260,24 @@
                         <td class="px-3 py-2 text-right whitespace-nowrap font-semibold {{ ($p->cantidad_fisica !== null && $p->cantidad_fisica < 10) ? 'text-red-600' : 'text-gray-800' }}">
                             {{ $p->cantidad_fisica !== null ? number_format($p->cantidad_fisica, 2) : '—' }}
                         </td>
+                        @php
+                            $apartado   = (float)($p->cantidad_apartada ?? 0);
+                            $disponible = max(0, (float)($p->cantidad_fisica ?? 0) - $apartado);
+                        @endphp
+                        <td class="px-3 py-2 text-right whitespace-nowrap {{ $apartado > 0 ? 'text-amber-600 font-semibold' : 'text-gray-400' }}">
+                            {{ $apartado > 0 ? number_format($apartado, 2) : '—' }}
+                        </td>
+                        <td class="px-3 py-2 text-right whitespace-nowrap font-semibold {{ $disponible < 5 ? 'text-red-600' : 'text-emerald-700' }}">
+                            {{ number_format($disponible, 2) }}
+                        </td>
+                        @if($esAlmacen)
                         <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->fecha_salida ? $p->fecha_salida->format('d/m/Y') : '—' }}</td>
                         <td class="px-3 py-2 text-gray-800 text-right whitespace-nowrap">{{ $p->precio_unitario !== null ? number_format($p->precio_unitario, 2) : '—' }}</td>
                         <td class="px-3 py-2 text-gray-700 text-center whitespace-nowrap">{{ $p->moneda ?? '—' }}</td>
                         <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $p->factura ?? '—' }}</td>
+                        @endif
                         <td class="px-3 py-2 text-gray-600">{{ $p->observaciones ?? '—' }}</td>
+                        @if($esAlmacen)
                         <td class="px-3 py-2 whitespace-nowrap {{ ($p->fecha_vencimiento && $p->fecha_vencimiento->lte(now()->addDays(30))) ? 'text-red-600 font-semibold' : 'text-gray-700' }}">
                             {{ $p->fecha_vencimiento ? $p->fecha_vencimiento->format('d/m/Y') : '—' }}
                         </td>
@@ -240,10 +288,36 @@
                                 <span class="text-gray-400">—</span>
                             @endif
                         </td>
+                        @endif
+                        {{-- OPCIONES --}}
+                        <td class="px-3 py-2 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-1">
+                                <button type="button"
+                                    onclick="abrirModalRequisicion({{ $p->id }}, '{{ addslashes($p->codigo) }}', '{{ addslashes($p->descripcion) }}', {{ $p->unidad_medida_id ?? 'null' }}, '{{ addslashes($p->unidadMedida->codigo ?? '') }}')"
+                                    title="Solicitar producto / Crear requisición"
+                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition whitespace-nowrap">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                    </svg>
+                                    Solicitar
+                                </button>
+                                @if($puedeEditar)
+                                <button type="button"
+                                    onclick="abrirModalEditar({{ $editData }})"
+                                    title="Editar producto"
+                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    Editar
+                                </button>
+                                @endif
+                            </div>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="19" class="px-6 py-12 text-center text-gray-400 text-sm">
+                        <td colspan="{{ $esAlmacen ? 22 : 16 }}" class="px-6 py-12 text-center text-gray-400 text-sm">
                             @if(request('search'))
                                 Sin resultados para "<strong>{{ request('search') }}</strong>"
                             @else
@@ -1340,6 +1414,298 @@ document.getElementById('searchInput').addEventListener('keydown', function(even
 </script>
 
 {{-- ═══════════════════════════════════════════════════════════════════════════════
+     MODAL: Editar Producto
+═══════════════════════════════════════════════════════════════════════════════ --}}
+<div id="modalEditarProducto" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col">
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-4 text-white rounded-t-2xl" style="background-color:#4A568D">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-2 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base">Editar Producto</h3>
+                    <p id="editSubtitle" class="text-xs text-white opacity-90">Modificar información del producto</p>
+                </div>
+            </div>
+            <button onclick="cerrarModalEditar()" class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Body --}}
+        <div class="flex-1 overflow-y-auto px-6 py-5">
+            <form id="formEditarProducto" method="POST">
+                @csrf
+                <input type="hidden" name="_method" value="PATCH">
+
+                {{-- Sección: Identificación --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                        </svg>
+                        Identificación
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Código <span class="text-gray-400 font-normal">(solo lectura)</span></label>
+                            <input type="text" id="edit_codigo" readonly
+                                class="w-full border-2 border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm font-mono font-bold text-gray-500 cursor-not-allowed">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Consecutivo <span class="text-gray-400 font-normal">(solo lectura)</span></label>
+                            <input type="text" id="edit_consecutivo" readonly
+                                class="w-full border-2 border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm font-mono text-gray-500 cursor-not-allowed">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Clasificación --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        Clasificación
+                    </h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Componente <span class="text-red-500">*</span></label>
+                            <select name="componente_id" id="edit_componente_id" required
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($componentes as $comp)
+                                    <option value="{{ $comp->id }}">{{ $comp->codigo }} – {{ $comp->descripcion }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría <span class="text-red-500">*</span></label>
+                            <select name="categoria_id" id="edit_categoria_id" required
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($categorias as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->codigo }} – {{ $cat->descripcion }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Familia <span class="text-red-500">*</span></label>
+                            <select name="familia_id" id="edit_familia_id" required
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($familias as $fam)
+                                    <option value="{{ $fam->id }}">{{ $fam->codigo }} – {{ $fam->descripcion }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Unidad de Medida <span class="text-red-500">*</span></label>
+                            <select name="unidad_medida_id" id="edit_unidad_medida_id" required
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <option value="">Selecciona...</option>
+                                @foreach($unidadesMedida as $um)
+                                    <option value="{{ $um->id }}">{{ $um->codigo }} – {{ $um->descripcion }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Descripción y Ubicación --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Descripción, Ubicación y Dimensiones
+                    </h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Descripción <span class="text-red-500">*</span></label>
+                            <textarea name="descripcion" id="edit_descripcion" required rows="2"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Ubicación</label>
+                                <select name="ubicacion_id" id="edit_ubicacion_id"
+                                    class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                    <option value="">Sin ubicación</option>
+                                    @foreach($ubicaciones as $ubi)
+                                        <option value="{{ $ubi->id }}">{{ $ubi->codigo }} – {{ $ubi->descripcion }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Dimensiones</label>
+                                <input type="text" name="dimensiones" id="edit_dimensiones"
+                                    class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="Ej: 10x20x30 cm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Cantidades --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                        Cantidades
+                    </h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Cantidad Entrada</label>
+                            <input type="number" name="cantidad_entrada" id="edit_cantidad_entrada" step="0.01" min="0"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Cantidad Salida</label>
+                            <input type="number" name="cantidad_salida" id="edit_cantidad_salida" step="0.01" min="0"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Cantidad Física</label>
+                            <input type="number" name="cantidad_fisica" id="edit_cantidad_fisica" step="0.01" min="0"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Fechas --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Fechas
+                    </h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha Entrada</label>
+                            <input type="date" name="fecha_entrada" id="edit_fecha_entrada"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha Salida</label>
+                            <input type="date" name="fecha_salida" id="edit_fecha_salida"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha Vencimiento</label>
+                            <input type="date" name="fecha_vencimiento" id="edit_fecha_vencimiento"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Financiera --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Información Financiera
+                    </h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Precio Unitario</label>
+                            <input type="number" name="precio_unitario" id="edit_precio_unitario" step="0.01" min="0"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Moneda</label>
+                            <select name="moneda" id="edit_moneda"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                <option value="MXN">MXN – Peso Mexicano</option>
+                                <option value="USD">USD – Dólar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Factura</label>
+                            <input type="text" name="factura" id="edit_factura" maxlength="50"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                placeholder="Número de factura">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Orden de Compra</label>
+                            <input type="text" name="orden_compra" id="edit_orden_compra" maxlength="50"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                placeholder="Número de O.C.">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Referencias --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Referencias y Documentos
+                    </h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Núm. Requisición</label>
+                            <input type="text" name="numero_requisicion" id="edit_numero_requisicion" maxlength="50"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Número de Parte</label>
+                            <input type="text" name="numero_parte" id="edit_numero_parte" maxlength="100"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Hoja de Seguridad</label>
+                            <input type="text" name="hoja_seguridad" id="edit_hoja_seguridad" maxlength="255"
+                                class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Sección: Observaciones --}}
+                <div class="mb-5">
+                    <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2 border-b pb-2 text-sm">
+                        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Observaciones (DN / NP)
+                    </h4>
+                    <textarea name="observaciones" id="edit_observaciones" rows="3"
+                        class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        placeholder="Observaciones adicionales (opcional)"></textarea>
+                </div>
+
+                {{-- Botones --}}
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="cerrarModalEditar()"
+                        class="px-5 py-2 bg-white border-2 border-gray-300 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btnGuardarEditar"
+                        class="px-6 py-2 text-white text-sm font-bold rounded-xl transition hover:opacity-90 shadow-lg flex items-center gap-2"
+                        style="background-color:#4A568D">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════════════════════════
      MODAL: Nueva Requisición
 ═══════════════════════════════════════════════════════════════════════════════ --}}
 <div id="modalRequisicion" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
@@ -1366,9 +1732,9 @@ document.getElementById('searchInput').addEventListener('keydown', function(even
             {{-- Fila 1: Fecha / Fecha req. / Folio --}}
             <div class="grid grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha <span class="text-red-500">*</span></label>
-                    <input type="date" name="fecha" value="{{ now()->format('Y-m-d') }}" required
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha de Solicitud</label>
+                    <input type="date" name="fecha" value="{{ now()->format('Y-m-d') }}" readonly 
+                        class="w-full border bg-gray-100 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha Requerida</label>
@@ -1382,64 +1748,28 @@ document.getElementById('searchInput').addEventListener('keydown', function(even
                 </div>
             </div>
 
-            {{-- Fila 2: Solicitante / Estado / Prioridad --}}
-            <div class="grid grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Solicitante <span class="text-red-500">*</span></label>
-                    <input type="text" name="solicitante" value="{{ auth()->user()->name }}" required
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Estado <span class="text-red-500">*</span></label>
-                    <select name="estado" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                        <option value="pendiente" selected>Pendiente</option>
-                        <option value="aprobada">Aprobada</option>
-                        <option value="entregada">Entregada</option>
-                        <option value="cancelada">Cancelada</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Prioridad</label>
-                    <select name="prioridad" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                        <option value="urgente">🔴 Urgente</option>
-                        <option value="alta">🟠 Alta</option>
-                        <option value="normal" selected>⚪ Normal</option>
-                        <option value="baja">🔵 Baja</option>
-                    </select>
-                </div>
-            </div>
+            {{-- Solicitante --}}
 
-            {{-- Departamento typeahead --}}
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">
-                    Departamento <span class="text-red-500">*</span>
-                    <span id="deptoNuevoTag" class="hidden ml-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">✦ Se creará nuevo</span>
-                </label>
-                <div class="relative">
-                    <input type="text" id="req_depto_search" placeholder="Escribe para buscar o crear departamento..." autocomplete="off"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                    <input type="hidden" name="departamento_id" id="req_depto_id">
-                    <input type="hidden" name="departamento_nombre" id="req_depto_nombre">
-                    <div id="req_depto_dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-44 overflow-y-auto"></div>
-                </div>
-                <p class="text-xs text-gray-400 mt-1">Si no existe, escríbelo y selecciona "Crear nuevo" — se creará automáticamente</p>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Solicitante</label>
+                <input type="text" name="solicitante" value="{{ auth()->user()->name }}" required
+                    class="w-full border bg-gray-100 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" readonly>
             </div>
 
-            {{-- Producto typeahead --}}
+            {{-- Departamento (tomado automáticamente de la API de RH) --}}
+            <input type="hidden" name="departamento_id" id="req_depto_id">
+            <input type="hidden" name="departamento_nombre" id="req_depto_nombre">
+
+            {{-- Producto (solo lectura) --}}
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Producto <span class="text-red-500">*</span></label>
-                <div class="relative">
-                    <input type="text" id="req_prod_search" placeholder="Buscar por código o descripción..." autocomplete="off"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                    <input type="hidden" name="producto_id" id="req_prod_id">
-                    <div id="req_prod_dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-52 overflow-y-auto"></div>
-                </div>
-                <div id="req_prod_preview" class="hidden mt-2 flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-xs">
-                    <svg class="w-3.5 h-3.5 shrink-0 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <svg class="w-4 h-4 shrink-0 text-[#4A568D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>
-                    <span id="req_prod_preview_text" class="font-medium text-purple-800"></span>
+                    <span id="req_prod_display" class="font-medium text-gray-800">—</span>
                 </div>
+                <input type="hidden" name="producto_id" id="req_prod_id">
             </div>
 
             {{-- Cantidad + UM --}}
@@ -1451,12 +1781,10 @@ document.getElementById('searchInput').addEventListener('keydown', function(even
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Unidad de Medida</label>
-                    <div class="relative">
-                        <input type="text" id="req_um_search" placeholder="PZA, KG, MT..." autocomplete="off"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                        <input type="hidden" name="unidad_medida_id" id="req_um_id">
-                        <div id="req_um_dropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-44 overflow-y-auto"></div>
+                    <div class="flex items-center px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 min-h-[38px]">
+                        <span id="req_um_display">—</span>
                     </div>
+                    <input type="hidden" name="unidad_medida_id" id="req_um_id">
                 </div>
             </div>
 
@@ -1490,23 +1818,117 @@ document.getElementById('searchInput').addEventListener('keydown', function(even
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════
-   MODAL REQUISICIÓN
+   MODAL EDITAR PRODUCTO
+═══════════════════════════════════════════════════════════════════ */
+function abrirModalEditar(data) {
+    const form = document.getElementById('formEditarProducto');
+    form.action = '/reportes/entradas/' + data.id;
+
+    document.getElementById('editSubtitle').textContent = 'Modificar «' + data.codigo + '»';
+    document.getElementById('edit_codigo').value       = data.codigo       ?? '';
+    document.getElementById('edit_consecutivo').value  = data.consecutivo  ?? '';
+    document.getElementById('edit_descripcion').value  = data.descripcion  ?? '';
+    document.getElementById('edit_dimensiones').value  = data.dimensiones  ?? '';
+    document.getElementById('edit_cantidad_entrada').value  = data.cantidad_entrada  ?? '';
+    document.getElementById('edit_cantidad_salida').value   = data.cantidad_salida   ?? '';
+    document.getElementById('edit_cantidad_fisica').value   = data.cantidad_fisica   ?? '';
+    document.getElementById('edit_fecha_entrada').value     = data.fecha_entrada     ?? '';
+    document.getElementById('edit_fecha_salida').value      = data.fecha_salida      ?? '';
+    document.getElementById('edit_fecha_vencimiento').value = data.fecha_vencimiento ?? '';
+    document.getElementById('edit_precio_unitario').value   = data.precio_unitario   ?? '';
+    document.getElementById('edit_factura').value           = data.factura           ?? '';
+    document.getElementById('edit_orden_compra').value      = data.orden_compra      ?? '';
+    document.getElementById('edit_numero_requisicion').value= data.numero_requisicion?? '';
+    document.getElementById('edit_numero_parte').value      = data.numero_parte      ?? '';
+    document.getElementById('edit_hoja_seguridad').value    = data.hoja_seguridad    ?? '';
+    document.getElementById('edit_observaciones').value     = data.observaciones     ?? '';
+
+    // Selects
+    setSelectVal('edit_componente_id',    data.componente_id);
+    setSelectVal('edit_categoria_id',     data.categoria_id);
+    setSelectVal('edit_familia_id',       data.familia_id);
+    setSelectVal('edit_unidad_medida_id', data.unidad_medida_id);
+    setSelectVal('edit_ubicacion_id',     data.ubicacion_id);
+    setSelectVal('edit_moneda',           data.moneda ?? 'MXN');
+
+    const btn = document.getElementById('btnGuardarEditar');
+    btn.disabled = false;
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Guardar Cambios';
+
+    const m = document.getElementById('modalEditarProducto');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function setSelectVal(id, val) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const str = val !== null && val !== undefined ? String(val) : '';
+    for (const opt of sel.options) {
+        opt.selected = opt.value === str;
+    }
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modalEditarProducto').classList.replace('flex','hidden');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('modalEditarProducto')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('modalEditarProducto')) cerrarModalEditar();
+});
+
+document.getElementById('formEditarProducto')?.addEventListener('submit', function () {
+    const btn = document.getElementById('btnGuardarEditar');
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Guardando...';
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL REQUISICIÓN (con pre-llenado opcional de producto)
 ═══════════════════════════════════════════════════════════════════ */
 const CSRF_REQ = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
-function abrirModalRequisicion() {
+function abrirModalRequisicion(productoId, productoCodigo, productoDesc, umId, umCodigo) {
     const m = document.getElementById('modalRequisicion');
     m.classList.remove('hidden');
     m.classList.add('flex');
     document.body.style.overflow = 'hidden';
     document.getElementById('formRequisicion').reset();
-    ['req_depto_id', 'req_depto_nombre', 'req_prod_id', 'req_um_id'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('req_prod_preview').classList.add('hidden');
-    document.getElementById('deptoNuevoTag').classList.add('hidden');
+
+    // Producto (solo lectura)
+    document.getElementById('req_prod_id').value            = productoId   || '';
+    document.getElementById('req_prod_display').textContent = productoCodigo + (productoDesc ? ' — ' + productoDesc : '');
+
+    // Unidad de medida del producto (solo lectura)
+    document.getElementById('req_um_id').value           = umId     || '';
+    document.getElementById('req_um_display').textContent = umCodigo || '—';
+
     const btn = document.getElementById('btnGuardarReq');
     btn.disabled = false;
     btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Guardar Solicitud`;
-    setTimeout(() => document.getElementById('req_depto_search')?.focus(), 120);
+
+    // Obtener departamento del usuario desde la API de RH
+    const deptoIdEl  = document.getElementById('req_depto_id');
+    const deptoNomEl = document.getElementById('req_depto_nombre');
+    deptoIdEl.value  = '';
+    deptoNomEl.value = '';
+
+    fetch('{{ route("usuarios.info_rh") }}', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(info => {
+        if (info.departamento_nombre) {
+            deptoNomEl.value = info.departamento_nombre;
+            deptoIdEl.value  = info.departamento_id ?? '';
+        }
+    })
+    .catch(() => {})
+    .finally(() => {
+        setTimeout(() => document.querySelector('#formRequisicion [name="cantidad"]')?.focus(), 120);
+    });
 }
 
 function cerrarModalRequisicion() {
@@ -1526,182 +1948,17 @@ document.addEventListener('keydown', e => {
     }
 });
 
-/* ─── Typeahead genérico ─────────────────── */
-function crearTypeaheadReq({ inputId, dropdownId, hiddenId, endpoint, renderItem, onSelect, allowCreate = false }) {
-    const input = document.getElementById(inputId);
-    const dropdown = document.getElementById(dropdownId);
-    const hidden = document.getElementById(hiddenId);
-    let timer = null;
 
-    input?.addEventListener('input', function () {
-        clearTimeout(timer);
-        const q = this.value.trim();
-        hidden.value = '';
-        if (!q) {
-            ocultarDropdown();
-            return;
-        }
-        timer = setTimeout(() => buscar(q), 230);
-    });
-
-    input?.addEventListener('focus', function () {
-        if (this.value.trim()) buscar(this.value.trim());
-    });
-
-    input?.addEventListener('blur', () => setTimeout(ocultarDropdown, 200));
-
-    function ocultarDropdown() {
-        dropdown.classList.add('hidden');
-    }
-
-    async function buscar(q) {
-        try {
-            const r = await fetch(`${endpoint}?q=${encodeURIComponent(q)}`);
-            const json = await r.json();
-            mostrarResultados(json.data || [], q);
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    function mostrarResultados(items, q) {
-        dropdown.innerHTML = '';
-
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'px-3 py-2 text-sm text-gray-700 hover:bg-purple-50 cursor-pointer flex items-center gap-2';
-            div.innerHTML = renderItem(item, q);
-            div.addEventListener('mousedown', e => {
-                e.preventDefault();
-                hidden.value = item.id;
-                input.value = item.label || item.codigo || item.nombre || '';
-                delete input.dataset.newNombre;
-                ocultarDropdown();
-                if (onSelect) onSelect(item);
-            });
-            dropdown.appendChild(div);
-        });
-
-        if (items.length === 0 && allowCreate) {
-            const q2 = input.value.trim();
-            const div = document.createElement('div');
-            div.className = 'px-3 py-2.5 text-sm font-semibold cursor-pointer flex items-center gap-2 hover:bg-green-50 text-green-700';
-            div.innerHTML = `<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg> Crear departamento "<strong>${xssReq(q2)}</strong>"`;
-            div.addEventListener('mousedown', e => {
-                e.preventDefault();
-                hidden.value = '';
-                document.getElementById('req_depto_nombre').value = q2;
-                document.getElementById('deptoNuevoTag').classList.remove('hidden');
-                input.dataset.newNombre = q2;
-                ocultarDropdown();
-                if (onSelect) onSelect({ id: null, label: q2, isNew: true });
-            });
-            dropdown.appendChild(div);
-        }
-
-        if (dropdown.children.length > 0) dropdown.classList.remove('hidden');
-        else ocultarDropdown();
-    }
-}
-
-/* ─── Instancias de typeahead para requisición ────────────── */
-// Departamento
-crearTypeaheadReq({
-    inputId: 'req_depto_search',
-    dropdownId: 'req_depto_dropdown',
-    hiddenId: 'req_depto_id',
-    endpoint: '/api/v1/departamentos/buscar',
-    allowCreate: true,
-    renderItem: (item, q) =>
-        `<svg class="w-3.5 h-3.5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>${hlReq(item.label, q)}`,
-    onSelect: item => {
-        if (!item.isNew) {
-            document.getElementById('req_depto_nombre').value = item.label;
-            document.getElementById('deptoNuevoTag').classList.add('hidden');
-        }
-    }
-});
-
-// Producto
-crearTypeaheadReq({
-    inputId: 'req_prod_search',
-    dropdownId: 'req_prod_dropdown',
-    hiddenId: 'req_prod_id',
-    endpoint: '/api/v1/productos/buscar',
-    renderItem: (item, q) => {
-        const c = item.codigo || '',
-            d = item.descripcion || '';
-        return `<span class="font-mono font-bold text-xs shrink-0 text-purple-700">${hlReq(c, q)}</span><span class="text-gray-600 truncate min-w-0">${hlReq(d, q)}</span>${item.um ? `<span class="ml-auto text-gray-400 text-xs shrink-0">${xssReq(item.um)}</span>` : ''}`;
-    },
-    onSelect: item => {
-        document.getElementById('req_prod_preview_text').textContent = `${item.codigo} — ${item.descripcion || ''}`;
-        document.getElementById('req_prod_preview').classList.remove('hidden');
-        if (item.um) autoFillUMReq(item.um);
-    }
-});
-
-// Unidad de Medida
-crearTypeaheadReq({
-    inputId: 'req_um_search',
-    dropdownId: 'req_um_dropdown',
-    hiddenId: 'req_um_id',
-    endpoint: '/api/v1/unidades-medida/buscar',
-    renderItem: (item, q) =>
-        `<span class="font-mono font-bold text-xs shrink-0 text-purple-700">${hlReq(item.codigo || '', q)}</span><span class="text-gray-500 text-xs truncate">${xssReq(item.label?.split('—')[1]?.trim() || '')}</span>`,
-    onSelect: () => {}
-});
-
-/* Auto-rellenar UM desde producto */
-async function autoFillUMReq(umCodigo) {
-    try {
-        const r = await fetch(`/api/v1/unidades-medida/buscar?q=${encodeURIComponent(umCodigo)}`);
-        const json = await r.json();
-        const hit = (json.data || []).find(u => u.codigo === umCodigo);
-        if (hit) {
-            document.getElementById('req_um_id').value = hit.id;
-            document.getElementById('req_um_search').value = hit.label || hit.codigo;
-        }
-    } catch (e) {}
-}
 
 /* ─── Validación pre-submit ──────────────── */
 document.getElementById('formRequisicion')?.addEventListener('submit', function (e) {
-    const prodId = document.getElementById('req_prod_id').value;
-    const deptoId = document.getElementById('req_depto_id').value;
-    const deptoNombre = document.getElementById('req_depto_nombre').value;
-
-    if (!prodId) {
-        e.preventDefault();
-        const el = document.getElementById('req_prod_search');
-        el.classList.add('border-red-400', 'ring-2', 'ring-red-200');
-        el.focus();
-        setTimeout(() => el.classList.remove('border-red-400', 'ring-2', 'ring-red-200'), 2500);
-        return;
-    }
-    if (!deptoId && !deptoNombre) {
-        e.preventDefault();
-        const el = document.getElementById('req_depto_search');
-        el.classList.add('border-red-400', 'ring-2', 'ring-red-200');
-        el.focus();
-        setTimeout(() => el.classList.remove('border-red-400', 'ring-2', 'ring-red-200'), 2500);
-        return;
-    }
+    if (!document.getElementById('req_prod_id').value) { e.preventDefault(); return; }
     const btn = document.getElementById('btnGuardarReq');
     btn.disabled = true;
     btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Guardando...`;
 });
 
-/* ─── Helpers ─────────────────────────────── */
-function hlReq(text, q) {
-    if (!text || !q) return xssReq(String(text || ''));
-    return xssReq(String(text)).replace(new RegExp(`(${escRegReq(q)})`, 'gi'), '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>');
-}
-function xssReq(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function escRegReq(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+
 </script>
 
 @endsection

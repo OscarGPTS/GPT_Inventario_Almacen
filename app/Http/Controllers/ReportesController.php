@@ -6,6 +6,7 @@ use App\Models\Producto;
 use App\Models\Solicitud;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Log;
 
 class ReportesController extends Controller
@@ -238,6 +239,11 @@ class ReportesController extends Controller
 
         if ($request->filled('prioridad')) {
             $query->where('prioridad', $request->prioridad);
+        }
+
+        // Visitante solo ve sus propias solicitudes
+        if (auth()->user()->hasRole('visitante')) {
+            $query->where('usuario_registro_id', auth()->id());
         }
 
         $registros = $query->paginate(50)->withQueryString();
@@ -1381,5 +1387,56 @@ class ReportesController extends Controller
             Log::warning("No se pudo parsear fecha texto: {$valor}");
             return null;
         }
+    }
+
+    /**
+     * Actualizar un producto existente desde la vista Inventario
+     */
+    public function actualizarProducto(Request $request, Producto $producto)
+    {
+        $user = auth()->user();
+        if (!$user->hasRole(['admin', 'admin_almacen', 'almacenista'])) {
+            abort(403);
+        }
+
+        $request->validate([
+            'descripcion'        => 'required|string',
+            'componente_id'      => 'required|exists:componentes,id',
+            'categoria_id'       => 'required|exists:categorias,id',
+            'familia_id'         => 'required|exists:familias,id',
+            'unidad_medida_id'   => 'required|exists:unidades_medida,id',
+            'ubicacion_id'       => 'nullable|exists:ubicaciones,id',
+            'dimensiones'        => 'nullable|string|max:100',
+            'cantidad_entrada'   => 'nullable|numeric|min:0',
+            'cantidad_salida'    => 'nullable|numeric|min:0',
+            'cantidad_fisica'    => 'nullable|numeric|min:0',
+            'fecha_entrada'      => 'nullable|date',
+            'fecha_salida'       => 'nullable|date',
+            'fecha_vencimiento'  => 'nullable|date',
+            'precio_unitario'    => 'nullable|numeric|min:0',
+            'moneda'             => 'nullable|in:MXN,USD',
+            'factura'            => 'nullable|string|max:50',
+            'orden_compra'       => 'nullable|string|max:50',
+            'numero_requisicion' => 'nullable|string|max:50',
+            'numero_parte'       => 'nullable|string|max:100',
+            'hoja_seguridad'     => 'nullable|string|max:255',
+            'observaciones'      => 'nullable|string',
+        ]);
+
+        $old = $producto->toArray();
+
+        $producto->update($request->only([
+            'descripcion', 'componente_id', 'categoria_id', 'familia_id',
+            'unidad_medida_id', 'ubicacion_id', 'dimensiones',
+            'cantidad_entrada', 'cantidad_salida', 'cantidad_fisica',
+            'fecha_entrada', 'fecha_salida', 'fecha_vencimiento',
+            'precio_unitario', 'moneda', 'factura', 'orden_compra',
+            'numero_requisicion', 'numero_parte', 'hoja_seguridad', 'observaciones',
+        ]));
+
+        AuditLog::registrar('updated', 'productos', $producto->id, $old, $producto->fresh()->toArray());
+
+        return redirect()->route('reportes.entradas')
+            ->with('success', "Producto {$producto->codigo} actualizado correctamente.");
     }
 }

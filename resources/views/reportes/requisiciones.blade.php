@@ -216,31 +216,11 @@
                 </div>
             </div>
 
-            {{-- Fila 2: Solicitante / Estado / Prioridad --}}
-            <div class="grid grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Solicitante <span class="text-red-500">*</span></label>
-                    <input type="text" name="solicitante" value="{{ auth()->user()->name }}" required
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Estado <span class="text-red-500">*</span></label>
-                    <select name="estado" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                        <option value="pendiente" selected>Pendiente</option>
-                        <option value="aprobada">Aprobada</option>
-                        <option value="entregada">Entregada</option>
-                        <option value="cancelada">Cancelada</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Prioridad</label>
-                    <select name="prioridad" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                        <option value="urgente">🔴 Urgente</option>
-                        <option value="alta">🟠 Alta</option>
-                        <option value="normal" selected>⚪ Normal</option>
-                        <option value="baja">🔵 Baja</option>
-                    </select>
-                </div>
+            {{-- Solicitante --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Solicitante <span class="text-red-500">*</span></label>
+                <input type="text" name="solicitante" value="{{ auth()->user()->name }}" required
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
             </div>
 
             {{-- Departamento typeahead --}}

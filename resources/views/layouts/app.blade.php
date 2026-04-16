@@ -8,6 +8,7 @@
 </head>
 <body class="bg-gray-100">
     @auth
+    @php $esVisitante = auth()->user()->hasRole('visitante'); @endphp
     <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
         <div class="w-full px-4 sm:px-6">
             <div class="flex justify-between items-center" style="height:56px;">
@@ -23,6 +24,7 @@
 
                 {{-- Links principales (Desktop) --}}
                 <div class="hidden lg:flex items-center gap-1 ml-2 flex-1 overflow-x-auto">
+                    @if(!$esVisitante)
                     <a href="{{ route('dashboard') }}"
                        class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('dashboard') ? 'bg-gray-100 text-gray-900' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -30,6 +32,7 @@
                         </svg>
                         Dashboard
                     </a>
+                    @endif
                     <a href="{{ route('reportes.entradas') }}"
                        class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('reportes.entradas') ? 'bg-gray-100 text-gray-900' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,6 +47,7 @@
                         </svg>
                         Requisiciones
                     </a>
+                    @if(!$esVisitante)
                     <a href="{{ route('reportes.barras') }}"
                        class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('reportes.barras') ? 'bg-gray-100 text-gray-900' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,6 +83,24 @@
                         </svg>
                         Movimientos
                     </a>
+                    <a href="{{ route('catalogos.index') }}"
+                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('catalogos.*') ? 'bg-gray-100 text-gray-900' : '' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Catálogos
+                    </a>
+                    @if(auth()->user()->hasRole('admin'))
+                    <a href="{{ route('usuarios.index') }}"
+                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('usuarios.*') ? 'bg-gray-100 text-gray-900' : '' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        Usuarios
+                    </a>
+                    @endif
+                    @endif
                 </div>
 
                 {{-- Menu mobile (dropdown) --}}
@@ -92,6 +114,7 @@
                     </button>
                     <div id="mobileMenu"
                         class="hidden absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-50 max-h-[80vh] overflow-y-auto">
+                        @if(!$esVisitante)
                         <a href="{{ route('dashboard') }}"
                            class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('dashboard') ? 'bg-indigo-50 font-medium' : '' }}"
                            style="{{ request()->routeIs('dashboard') ? 'color:#4A568D;' : '' }}">
@@ -116,26 +139,47 @@
                             </svg>
                             Movimientos
                         </a>
+                        <a href="{{ route('catalogos.index') }}"
+                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('catalogos.*') ? 'bg-indigo-50 font-medium' : '' }}"
+                           style="{{ request()->routeIs('catalogos.*') ? 'color:#4A568D;' : '' }}">
+                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Catálogos
+                        </a>
+                        @if(auth()->user()->hasRole('admin'))
+                        <a href="{{ route('usuarios.index') }}"
+                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('usuarios.*') ? 'bg-indigo-50 font-medium' : '' }}"
+                           style="{{ request()->routeIs('usuarios.*') ? 'color:#4A568D;' : '' }}">
+                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                            Usuarios
+                        </a>
+                        @endif
                         <div class="border-t border-gray-100 my-1"></div>
                         <div class="px-3 py-1.5">
                             <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Reportes</p>
                         </div>
+                        @endif
                         <a href="{{ route('reportes.entradas') }}"
                            class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.entradas') ? 'bg-indigo-50 font-medium' : '' }}"
                            style="{{ request()->routeIs('reportes.entradas') ? 'color:#4A568D;' : '' }}">
                             <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                             </svg>
-                            Entradas
+                            Inventario
                         </a>
                         <a href="{{ route('reportes.requisiciones') }}"
                            class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.requisiciones') ? 'bg-indigo-50 font-medium' : '' }}"
-               style="{{ request()->routeIs('reportes.requisiciones') ? 'color:#4A568D;' : '' }}">
+                           style="{{ request()->routeIs('reportes.requisiciones') ? 'color:#4A568D;' : '' }}">
                             <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
-                            Concentrado de Requisiciones
+                            Mis Requisiciones
                         </a>
+                        @if(!$esVisitante)
                         <a href="{{ route('reportes.barras') }}"
                            class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.barras') ? 'bg-indigo-50 font-medium' : '' }}"
                            style="{{ request()->routeIs('reportes.barras') ? 'color:#4A568D;' : '' }}">
@@ -168,6 +212,7 @@
                             </svg>
                             Inventario General
                         </a>
+                        @endif
                     </div>
                 </div>
 

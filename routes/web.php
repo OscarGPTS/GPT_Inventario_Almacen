@@ -8,6 +8,8 @@ use App\Http\Controllers\SolicitudesController;
 use App\Http\Controllers\MovimientoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportesController;
+use App\Http\Controllers\CatalogosController;
+use App\Http\Controllers\UsuariosController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -46,20 +48,35 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/movimientos', [MovimientoController::class, 'index'])->name('movimientos.index');
     Route::get('/movimientos/producto/{producto}', [MovimientoController::class, 'porProducto'])->name('movimientos.producto');
 
+    // Usuarios
+    Route::get('/usuarios', [UsuariosController::class, 'index'])->name('usuarios.index');
+    Route::get('/usuarios/buscar-api', [UsuariosController::class, 'buscarApi'])->name('usuarios.buscar_api');
+    Route::get('/usuarios/info-rh', [UsuariosController::class, 'infoRhUsuario'])->name('usuarios.info_rh');
+    Route::post('/usuarios', [UsuariosController::class, 'store'])->name('usuarios.store');
+    Route::put('/usuarios/{usuario}/rol', [UsuariosController::class, 'updateRole'])->name('usuarios.update_role');
+    Route::delete('/usuarios/{usuario}', [UsuariosController::class, 'destroy'])->name('usuarios.destroy');
+
+    // Catálogos
+    Route::get('/catalogos', [CatalogosController::class, 'index'])->name('catalogos.index');
+    Route::post('/catalogos/{catalogo}', [CatalogosController::class, 'store'])->name('catalogos.store');
+    Route::put('/catalogos/{catalogo}/{id}', [CatalogosController::class, 'update'])->name('catalogos.update');
+    Route::delete('/catalogos/{catalogo}/{id}', [CatalogosController::class, 'destroy'])->name('catalogos.destroy');
+
     // Reportes / Secciones
     Route::prefix('reportes')->name('reportes.')->group(function () {
-        Route::get('/entradas',                        [ReportesController::class, 'entradas'])->name('entradas');
-        Route::get('/entradas/proximo-consecutivo',    [ReportesController::class, 'proximoConsecutivo'])->name('entradas.proximo_consecutivo');
-        Route::post('/entradas/importar',              [ReportesController::class, 'importarEntradas'])->name('entradas.importar');
-        Route::post('/entradas/guardar-producto',      [ReportesController::class, 'guardarProducto'])->name('entradas.guardar_producto');
-        Route::get('/requisiciones',      [ReportesController::class, 'requisiciones'])->name('requisiciones');
-        Route::get('/barras',             [ReportesController::class, 'barras'])->name('barras');
-        Route::post('/barras/importar',   [ReportesController::class, 'importarBarras'])->name('barras.importar');
-        Route::post('/barras/guardar-producto', [ReportesController::class, 'guardarProductoBarra'])->name('barras.guardar_producto');
-        Route::delete('/barras/borrar',   [ReportesController::class, 'borrarBarras'])->name('barras.borrar');
-        Route::get('/resguardo',          [ReportesController::class, 'resguardo'])->name('resguardo');
-        Route::get('/no-conforme',        [ReportesController::class, 'noConforme'])->name('no_conforme');
-        Route::get('/inventario-general', [ReportesController::class, 'inventarioGeneral'])->name('inventario_general');
+        Route::get('/entradas',[ReportesController::class, 'entradas'])->name('entradas');
+        Route::get('/entradas/proximo-consecutivo',[ReportesController::class, 'proximoConsecutivo'])->name('entradas.proximo_consecutivo');
+        Route::post('/entradas/importar',[ReportesController::class, 'importarEntradas'])->name('entradas.importar');
+        Route::post('/entradas/guardar-producto',[ReportesController::class, 'guardarProducto'])->name('entradas.guardar_producto');
+        Route::patch('/entradas/{producto}',[ReportesController::class, 'actualizarProducto'])->name('entradas.actualizar_producto');
+        Route::get('/requisiciones',[ReportesController::class, 'requisiciones'])->name('requisiciones');
+        Route::get('/barras',[ReportesController::class, 'barras'])->name('barras');
+        Route::post('/barras/importar',[ReportesController::class, 'importarBarras'])->name('barras.importar');
+        Route::post('/barras/guardar-producto',[ReportesController::class, 'guardarProductoBarra'])->name('barras.guardar_producto');
+        Route::delete('/barras/borrar',[ReportesController::class, 'borrarBarras'])->name('barras.borrar');
+        Route::get('/resguardo',[ReportesController::class, 'resguardo'])->name('resguardo');
+        Route::get('/no-conforme',[ReportesController::class, 'noConforme'])->name('no_conforme');
+        Route::get('/inventario-general',[ReportesController::class, 'inventarioGeneral'])->name('inventario_general');
     });
     
     // Logout
