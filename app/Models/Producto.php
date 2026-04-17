@@ -84,6 +84,11 @@ class Producto extends Model
         return $this->hasMany(Solicitud::class);
     }
 
+    public function noConformidades()
+    {
+        return $this->hasMany(NoConformidad::class);
+    }
+
     // Generar código automáticamente
     public static function generarCodigo($componente_codigo, $categoria_codigo, $familia_codigo, $consecutivo)
     {

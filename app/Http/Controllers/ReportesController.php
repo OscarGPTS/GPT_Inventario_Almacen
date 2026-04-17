@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use App\Models\Solicitud;
+use App\Models\NoConformidad;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\AuditLog;
@@ -306,19 +307,24 @@ class ReportesController extends Controller
      */
     public function noConforme(Request $request)
     {
-        $query = Producto::with(['componente', 'categoria', 'familia', 'unidadMedida', 'ubicacion'])
-            ->where('no_conforme', true)
-            ->orderBy('fecha_nc', 'desc')
-            ->orderBy('codigo');
+        $query = NoConformidad::with(['producto.componente', 'producto.categoria', 'producto.familia', 'producto.unidadMedida', 'producto.ubicacion', 'registrador', 'resolutor'])
+            ->orderByDesc('created_at');
 
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
-                $q->where('codigo', 'like', "%{$s}%")
-                  ->orWhere('descripcion', 'like', "%{$s}%")
-                  ->orWhere('observacion_nc', 'like', "%{$s}%")
-                  ->orWhere('factura', 'like', "%{$s}%");
+                $q->where('descripcion', 'like', "%{$s}%")
+                  ->orWhere('resolucion', 'like', "%{$s}%")
+                  ->orWhere('estatus', 'like', "%{$s}%")
+                  ->orWhereHas('producto', function ($pq) use ($s) {
+                      $pq->where('codigo', 'like', "%{$s}%")
+                         ->orWhere('descripcion', 'like', "%{$s}%");
+                  });
             });
+        }
+
+        if ($request->filled('estatus')) {
+            $query->where('estatus', $request->estatus);
         }
 
         $registros = $query->paginate(50)->withQueryString();

@@ -10,6 +10,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportesController;
 use App\Http\Controllers\CatalogosController;
 use App\Http\Controllers\UsuariosController;
+use App\Http\Controllers\NoConformidadController;
+use App\Http\Controllers\TicketController;
+
+use App\Http\Middleware\SoloAdmin;
 
 Route::get('/', function () {
     return view('welcome');
@@ -49,12 +53,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/movimientos/producto/{producto}', [MovimientoController::class, 'porProducto'])->name('movimientos.producto');
 
     // Usuarios
-    Route::get('/usuarios', [UsuariosController::class, 'index'])->name('usuarios.index');
-    Route::get('/usuarios/buscar-api', [UsuariosController::class, 'buscarApi'])->name('usuarios.buscar_api');
+    // Usuarios (solo admin, excepto info-rh que es para todos)
     Route::get('/usuarios/info-rh', [UsuariosController::class, 'infoRhUsuario'])->name('usuarios.info_rh');
-    Route::post('/usuarios', [UsuariosController::class, 'store'])->name('usuarios.store');
-    Route::put('/usuarios/{usuario}/rol', [UsuariosController::class, 'updateRole'])->name('usuarios.update_role');
-    Route::delete('/usuarios/{usuario}', [UsuariosController::class, 'destroy'])->name('usuarios.destroy');
+    Route::middleware(SoloAdmin::class)->group(function () {
+        Route::get('/usuarios', [UsuariosController::class, 'index'])->name('usuarios.index');
+        Route::get('/usuarios/buscar-api', [UsuariosController::class, 'buscarApi'])->name('usuarios.buscar_api');
+        Route::post('/usuarios', [UsuariosController::class, 'store'])->name('usuarios.store');
+        Route::put('/usuarios/{usuario}/rol', [UsuariosController::class, 'updateRole'])->name('usuarios.update_role');
+        Route::delete('/usuarios/{usuario}', [UsuariosController::class, 'destroy'])->name('usuarios.destroy');
+    });
 
     // Catálogos
     Route::get('/catalogos', [CatalogosController::class, 'index'])->name('catalogos.index');
@@ -78,7 +85,23 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/no-conforme',[ReportesController::class, 'noConforme'])->name('no_conforme');
         Route::get('/inventario-general',[ReportesController::class, 'inventarioGeneral'])->name('inventario_general');
     });
-    
+
+    // No Conformidades
+    Route::post('/no-conformidades', [NoConformidadController::class, 'store'])->name('no_conformidades.store');
+    Route::patch('/no-conformidades/{noConformidad}', [NoConformidadController::class, 'update'])->name('no_conformidades.update');
+    Route::delete('/no-conformidades/{noConformidad}', [NoConformidadController::class, 'destroy'])->name('no_conformidades.destroy');
+
+    // Tickets (Solicitudes de movimiento de piezas)
+    Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+    Route::get('/tickets/crear', [TicketController::class, 'create'])->name('tickets.create');
+    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+    Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+    Route::post('/tickets/{ticket}/asignar', [TicketController::class, 'assign'])->name('tickets.assign');
+    Route::post('/tickets/{ticket}/completar', [TicketController::class, 'complete'])->name('tickets.complete');
+    Route::post('/tickets/{ticket}/cancelar', [TicketController::class, 'cancel'])->name('tickets.cancel');
+    Route::post('/tickets/{ticket}/encuesta', [TicketController::class, 'survey'])->name('tickets.survey');
+    Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+
     // Logout
     Route::post('/logout', function () {
         auth()->logout();

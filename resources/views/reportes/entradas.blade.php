@@ -293,15 +293,23 @@
                         <td class="px-3 py-2 text-center whitespace-nowrap">
                             <div class="flex items-center justify-center gap-1">
                                 <button type="button"
-                                    onclick="abrirModalRequisicion({{ $p->id }}, '{{ addslashes($p->codigo) }}', '{{ addslashes($p->descripcion) }}', {{ $p->unidad_medida_id ?? 'null' }}, '{{ addslashes($p->unidadMedida->codigo ?? '') }}')"
+                                    onclick="abrirModalRequisicion({{ $p->id }}, '{{ addslashes($p->codigo) }}', '{{ addslashes($p->descripcion) }}', {{ $p->unidad_medida_id ?? 'null' }}, '{{ addslashes($p->unidadMedida->codigo ?? '') }}', {{ $disponible }})"
                                     title="Solicitar producto / Crear requisición"
                                     class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition whitespace-nowrap">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                     </svg>
-                                    Solicitar
+                                    Solicitar Pieza
                                 </button>
-                                @if($puedeEditar)
+                                <a href="{{ route('tickets.create', ['producto_id' => $p->id]) }}"
+                                    title="Crear solicitud de movimiento para este producto"
+                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition whitespace-nowrap">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                    </svg>
+                                    Mover Pieza
+                                </a>
+                                @if(!auth()->user()->hasRole('visitante'))
                                 <button type="button"
                                     onclick="abrirModalEditar({{ $editData }})"
                                     title="Editar producto"
@@ -311,6 +319,16 @@
                                     </svg>
                                     Editar
                                 </button>
+                                <button type="button"
+                                    onclick="abrirModalNC({{ $p->id }}, '{{ addslashes($p->codigo) }}', '{{ addslashes($p->descripcion) }}')"
+                                    title="Registrar no conformidad"
+                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition whitespace-nowrap">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    No Conforme
+                                </button>
+                                
                                 @endif
                             </div>
                         </td>
@@ -1775,8 +1793,8 @@ document.getElementById('searchInput').addEventListener('keydown', function(even
             {{-- Cantidad + UM --}}
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad <span class="text-red-500">*</span></label>
-                    <input type="number" name="cantidad" min="0.01" step="any" placeholder="0" required
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad <span class="text-red-500">*</span> <span id="req_max_label" class="text-gray-400 font-normal"></span></label>
+                    <input type="number" name="cantidad" id="req_cantidad" min="0.01" step="any" placeholder="0" required
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
                 </div>
                 <div>
@@ -1890,7 +1908,7 @@ document.getElementById('formEditarProducto')?.addEventListener('submit', functi
 ═══════════════════════════════════════════════════════════════════ */
 const CSRF_REQ = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
-function abrirModalRequisicion(productoId, productoCodigo, productoDesc, umId, umCodigo) {
+function abrirModalRequisicion(productoId, productoCodigo, productoDesc, umId, umCodigo, disponible) {
     const m = document.getElementById('modalRequisicion');
     m.classList.remove('hidden');
     m.classList.add('flex');
@@ -1904,6 +1922,17 @@ function abrirModalRequisicion(productoId, productoCodigo, productoDesc, umId, u
     // Unidad de medida del producto (solo lectura)
     document.getElementById('req_um_id').value           = umId     || '';
     document.getElementById('req_um_display').textContent = umCodigo || '—';
+
+    // Limitar cantidad máxima a la disponible
+    const cantidadInput = document.getElementById('req_cantidad');
+    const maxLabel = document.getElementById('req_max_label');
+    if (disponible !== undefined && disponible !== null) {
+        cantidadInput.max = disponible;
+        maxLabel.textContent = '(máx. ' + Number(disponible).toFixed(2) + ')';
+    } else {
+        cantidadInput.removeAttribute('max');
+        maxLabel.textContent = '';
+    }
 
     const btn = document.getElementById('btnGuardarReq');
     btn.disabled = false;
@@ -1958,7 +1987,127 @@ document.getElementById('formRequisicion')?.addEventListener('submit', function 
     btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Guardando...`;
 });
 
+/* ─── Modal No Conformidad ─────────────────── */
+function abrirModalNC(prodId, codigo, descripcion) {
+    document.getElementById('nc_producto_id').value = prodId;
+    document.getElementById('nc_prod_info').textContent = codigo + ' — ' + descripcion;
+    document.getElementById('nc_cantidad').value = '';
+    document.getElementById('nc_descripcion').value = '';
+    const m = document.getElementById('modalNCEntradas');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('nc_cantidad').focus(), 100);
+}
+function cerrarModalNCEntradas() {
+    document.getElementById('modalNCEntradas').classList.replace('flex','hidden');
+    document.body.style.overflow = '';
+}
+document.getElementById('modalNCEntradas')?.addEventListener('click', e => { if (e.target.id === 'modalNCEntradas') cerrarModalNCEntradas(); });
+
+async function guardarNCEntradas() {
+    const prodId = document.getElementById('nc_producto_id').value;
+    const cantidad = document.getElementById('nc_cantidad').value.trim();
+    const descripcion = document.getElementById('nc_descripcion').value.trim();
+    const btn = document.getElementById('btnGuardarNCEntradas');
+
+    if (!cantidad || parseFloat(cantidad) <= 0) {
+        document.getElementById('nc_cantidad').classList.add('border-red-400','ring-2','ring-red-200');
+        document.getElementById('nc_cantidad').focus();
+        setTimeout(() => document.getElementById('nc_cantidad').classList.remove('border-red-400','ring-2','ring-red-200'), 2500);
+        return;
+    }
+    if (!descripcion) {
+        document.getElementById('nc_descripcion').classList.add('border-red-400','ring-2','ring-red-200');
+        document.getElementById('nc_descripcion').focus();
+        setTimeout(() => document.getElementById('nc_descripcion').classList.remove('border-red-400','ring-2','ring-red-200'), 2500);
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    try {
+        const res = await fetch('/no-conformidades', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ producto_id: prodId, cantidad: cantidad, descripcion: descripcion })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        cerrarModalNCEntradas();
+        // Show quick success feedback
+        const flash = document.createElement('div');
+        flash.className = 'fixed top-4 right-4 z-[60] flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm shadow-lg';
+        flash.innerHTML = '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> No conformidad registrada correctamente.';
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 3500);
+    } catch(err) {
+        alert('Error al registrar la no conformidad.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Registrar';
+    }
+}
+
 
 </script>
+
+{{-- MODAL: Registrar No Conformidad desde Entradas --}}
+@if(!auth()->user()->hasRole('visitante'))
+<div id="modalNCEntradas" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white" style="background-color:#4A568D;">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <span class="font-semibold">Registrar No Conformidad</span>
+            </div>
+            <button onclick="cerrarModalNCEntradas()" class="text-white opacity-70 hover:opacity-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+            <input type="hidden" id="nc_producto_id">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Producto</label>
+                <div id="nc_prod_info" class="px-3 py-2 rounded-lg text-sm font-medium border" style="background:#eef0f8;border-color:#c7cfe7;color:#4A568D;"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad afectada <span class="text-red-500">*</span></label>
+                <input type="number" id="nc_cantidad" step="0.01" min="0.01"
+                    placeholder="Ej: 5.00"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Descripción de la incidencia <span class="text-red-500">*</span></label>
+                <textarea id="nc_descripcion" rows="3"
+                    placeholder="Describe el motivo de la no conformidad..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"></textarea>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 rounded-b-2xl bg-gray-50">
+            <button type="button" onclick="cerrarModalNCEntradas()"
+                class="px-5 py-2 bg-white border border-gray-300 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+                Cancelar
+            </button>
+            <button type="button" id="btnGuardarNCEntradas" onclick="guardarNCEntradas()"
+                class="px-6 py-2 text-white text-sm font-semibold rounded-xl transition hover:opacity-90 flex items-center gap-2"
+                style="background-color:#4A568D;">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                Registrar
+            </button>
+        </div>
+    </div>
+</div>
+@endif
 
 @endsection
