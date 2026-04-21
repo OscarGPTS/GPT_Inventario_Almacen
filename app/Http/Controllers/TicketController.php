@@ -7,6 +7,10 @@ use App\Models\TicketImage;
 use App\Models\User;
 use App\Models\Producto;
 use App\Models\Survey;
+use App\Models\Solicitud;
+use App\Models\Departamento;
+use App\Models\UnidadMedida;
+use App\Models\Movimiento;
 use App\Mail\TicketCreatedMail;
 use App\Mail\TicketAssignedMail;
 use App\Mail\TicketCompletedMail;
@@ -130,7 +134,7 @@ class TicketController extends Controller
                 Mail::to($admin->email)->send(new TicketCreatedMail($ticket));
             }
 
-            return redirect()->route('tickets.index')
+            return redirect()->route('solicitudes.concentrado', ['tab' => 'movimiento'])
                 ->with('success', 'Solicitud creada exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -215,6 +219,22 @@ class TicketController extends Controller
         DB::beginTransaction();
         try {
             $ticket->complete($request->work_evidence);
+
+            // Registrar movimiento de transferencia completada
+            if ($ticket->producto) {
+                Movimiento::create([
+                    'producto_id'      => $ticket->producto_id,
+                    'usuario_id'       => Auth::id(),
+                    'tipo_movimiento'  => 'transferencia',
+                    'cantidad'         => 1,
+                    'cantidad_anterior'=> $ticket->producto->cantidad_fisica ?? 0,
+                    'cantidad_nueva'   => $ticket->producto->cantidad_fisica ?? 0,
+                    'ticket_id'        => $ticket->id,
+                    'descripcion'      => "Solicitud de movimiento completada: {$ticket->title}",
+                    'referencia'       => $ticket->formatted_code,
+                    'fuente'           => 'solicitud_movimiento',
+                ]);
+            }
 
             if ($request->hasFile('evidence_images')) {
                 $yearMonth = $ticket->created_at->format('Y/m');
@@ -312,7 +332,7 @@ class TicketController extends Controller
 
         $ticket->cancel($request->cancellation_reason ?: 'Cancelado por el usuario');
 
-        return redirect()->route('tickets.index')
+        return redirect()->route('solicitudes.concentrado', ['tab' => 'movimiento'])
             ->with('success', 'Ticket cancelado.');
     }
 
@@ -331,7 +351,106 @@ class TicketController extends Controller
 
         $ticket->delete();
 
-        return redirect()->route('tickets.index')
+        return redirect()->route('solicitudes.concentrado', ['tab' => 'movimiento'])
             ->with('success', 'Solicitud eliminada.');
+    }
+
+    /**
+     * Vista unificada: Requisiciones de Material + Solicitudes de Movimiento
+     */
+    public function concentrado(Request $request)
+    {
+        $user     = Auth::user();
+        $esGestor = $user->hasRole(['admin', 'admin_almacen']);
+        $tab      = $request->get('tab', 'todos');
+        $search   = $request->get('search', '');
+
+        // ── Estadísticas globales ────────────────────────────────────────────
+        $baseSol = $esGestor ? Solicitud::query() : Solicitud::where('usuario_registro_id', $user->id);
+        $baseTck = $esGestor ? Ticket::query()    : Ticket::where('user_id', $user->id);
+
+        $stats = [
+            'sol' => [
+                'total'     => (clone $baseSol)->count(),
+                'pendiente' => (clone $baseSol)->where('estado', 'pendiente')->count(),
+                'aprobada'  => (clone $baseSol)->where('estado', 'aprobada')->count(),
+                'entregada' => (clone $baseSol)->where('estado', 'entregada')->count(),
+                'cancelada' => (clone $baseSol)->where('estado', 'cancelada')->count(),
+            ],
+            'tck' => [
+                'total'      => (clone $baseTck)->count(),
+                'pendiente'  => (clone $baseTck)->where('status', 'pendiente')->count(),
+                'en_proceso' => (clone $baseTck)->where('status', 'en_proceso')->count(),
+                'finalizado' => (clone $baseTck)->where('status', 'finalizado')->count(),
+                'cancelado'  => (clone $baseTck)->where('status', 'cancelado')->count(),
+            ],
+        ];
+
+        // ── Solicitudes de Material ──────────────────────────────────────────
+        $solicitudes = null;
+        $recentSol   = null;
+
+        $buildSolQ = function () use ($user, $esGestor, $search, $request) {
+            $q = Solicitud::with(['departamento', 'producto', 'unidadMedida', 'usuarioRegistro'])
+                ->orderBy('fecha', 'desc')->orderBy('id', 'desc');
+            if (!$esGestor) $q->where('usuario_registro_id', $user->id);
+            if ($search) {
+                $s = $search;
+                $q->where(function ($sq) use ($s) {
+                    $sq->where('folio', 'like', "%{$s}%")
+                       ->orWhere('solicitante', 'like', "%{$s}%")
+                       ->orWhereHas('producto', fn ($pq) => $pq->where('codigo', 'like', "%{$s}%")->orWhere('descripcion', 'like', "%{$s}%"))
+                       ->orWhereHas('departamento', fn ($dq) => $dq->where('nombre', 'like', "%{$s}%"));
+                });
+            }
+            if ($request->filled('estado_mat')) $q->where('estado', $request->estado_mat);
+            if ($request->filled('prioridad'))  $q->where('prioridad', $request->prioridad);
+            return $q;
+        };
+
+        if ($tab === 'material') {
+            $solicitudes = $buildSolQ()->paginate(20)->appends($request->except('page'));
+        } else {
+            $recentSol = $buildSolQ()->limit(10)->get();
+        }
+
+        // ── Tickets de Movimiento ────────────────────────────────────────────
+        $tickets   = null;
+        $recentTck = null;
+
+        $buildTckQ = function () use ($user, $esGestor, $search, $request) {
+            $q = Ticket::with(['user', 'assignedTo', 'solicitudImages', 'producto'])
+                ->orderByRaw("CASE WHEN status='pendiente' THEN 0 WHEN status='en_proceso' THEN 1 ELSE 2 END")
+                ->orderByDesc('created_at');
+            if (!$esGestor) $q->where('user_id', $user->id);
+            if ($search) {
+                $s = $search;
+                $q->where(function ($sq) use ($s) {
+                    $sq->where('title', 'like', "%{$s}%")
+                       ->orWhere('description', 'like', "%{$s}%");
+                    if (is_numeric($s)) $sq->orWhere('id', $s);
+                });
+            }
+            if ($request->filled('status_tck')) $q->where('status', $request->status_tck);
+            return $q;
+        };
+
+        if ($tab === 'movimiento') {
+            $tickets = $buildTckQ()->paginate(20)->appends($request->except('page'));
+        } else {
+            $recentTck = $buildTckQ()->limit(10)->get();
+        }
+
+        // ── Catálogos para modal nueva requisición ───────────────────────────
+        $departamentos  = Departamento::orderBy('nombre')->get();
+        $unidadesMedida = UnidadMedida::orderBy('codigo')->get();
+        $almacenUsers   = $esGestor
+            ? User::whereHasRole(['almacenista', 'admin_almacen'])->orderBy('name')->get()
+            : null;
+
+        return view('solicitudes.concentrado', compact(
+            'solicitudes', 'tickets', 'stats', 'tab', 'esGestor', 'almacenUsers',
+            'recentSol', 'recentTck', 'departamentos', 'unidadesMedida', 'search'
+        ));
     }
 }

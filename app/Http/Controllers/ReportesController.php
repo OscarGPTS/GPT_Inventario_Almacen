@@ -1287,7 +1287,7 @@ class ReportesController extends Controller
                             continue;
                         } else {
                             // Modo: update_create o only_new -> Crear
-                            \App\Models\Producto::create([
+                            $productoCreado = \App\Models\Producto::create([
                                 'codigo' => $codigo,
                                 'componente_id' => $componenteId,
                                 'categoria_id' => $categoriaId,
@@ -1308,6 +1308,19 @@ class ReportesController extends Controller
                                 'fecha_vencimiento' => $fechaVencimiento,
                                 'hoja_seguridad' => $hojaSeguridad,
                             ]);
+                            if ($cantidadEntrada > 0) {
+                                \App\Models\Movimiento::create([
+                                    'producto_id'      => $productoCreado->id,
+                                    'usuario_id'       => auth()->id(),
+                                    'tipo_movimiento'  => 'entrada',
+                                    'cantidad'         => $cantidadEntrada,
+                                    'cantidad_anterior'=> 0,
+                                    'cantidad_nueva'   => $cantidadFisica,
+                                    'descripcion'      => "Importación Excel: {$descripcion}",
+                                    'referencia'       => $archivo->getClientOriginalName(),
+                                    'fuente'           => 'excel',
+                                ]);
+                            }
                             $creados++;
                             $procesados++;
                             Log::info("Fila " . ($i + 1) . ": Producto '{$codigo}' creado");

@@ -42,6 +42,9 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/productos/{producto}/no-conforme', [ProductoController::class, 'toggleNoConforme'])->name('productos.no_conforme');
     Route::resource('productos', ProductoController::class);
     
+    // Solicitudes — concentrado (Material + Movimiento) — debe ir ANTES del resource
+    Route::get('/solicitudes/concentrado', [TicketController::class, 'concentrado'])->name('solicitudes.concentrado');
+
     // Solicitudes
     Route::post('/solicitudes/nueva', [SolicitudesController::class, 'store'])->name('solicitudes.nueva');
     Route::patch('/solicitudes/{solicitud}/cambiar-estado', [SolicitudesController::class, 'updateEstado'])->name('solicitudes.cambiarEstado');

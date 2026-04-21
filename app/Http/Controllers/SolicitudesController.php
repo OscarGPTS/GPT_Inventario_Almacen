@@ -73,7 +73,7 @@ class SolicitudesController extends Controller
         }
 
         return redirect()
-            ->route('reportes.requisiciones')
+            ->route('solicitudes.concentrado', ['tab' => 'material'])
             ->with('success', 'Solicitud registrada correctamente.');
     }
 
@@ -136,6 +136,7 @@ class SolicitudesController extends Controller
                     'solicitud_id'     => $solicitud->id,
                     'descripcion'      => "Salida por solicitud {$solicitud->folio} - {$solicitud->solicitante}",
                     'referencia'       => $solicitud->folio,
+                    'fuente'           => 'solicitud_material',
                 ]);
             }
         }

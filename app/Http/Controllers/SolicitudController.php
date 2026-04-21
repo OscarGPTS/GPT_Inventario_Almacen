@@ -164,6 +164,7 @@ class SolicitudController extends Controller
                     'solicitud_id'     => $solicitud->id,
                     'descripcion'      => "Salida por solicitud {$solicitud->folio} - {$solicitud->solicitante}",
                     'referencia'       => $solicitud->folio,
+                    'fuente'           => 'solicitud_material',
                 ]);
             }
         }

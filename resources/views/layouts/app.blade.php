@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen flex flex-col">
     @auth
     @php $esVisitante = auth()->user()->hasRole('visitante'); @endphp
     <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
@@ -16,7 +16,9 @@
                 {{-- Logo --}}
                 <div class="flex-shrink-0 flex items-center gap-2 pr-4 border-r border-gray-200">
                     @if(file_exists(public_path('storage/img/logo_gpt.svg')))
+                    <a href="{{ route('dashboard') }}" >
                         <img src="{{ asset('storage/img/logo_gpt.svg') }}" alt="Logo" class="h-8 w-auto">
+                    </a>
                     @endif
                     <a href="{{ route('dashboard') }}" class="text-base font-bold text-gray-800 hover:text-gray-600 transition whitespace-nowrap">
                         Inventario Almacén
@@ -39,37 +41,16 @@
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                         </svg>
-                        Entradas
+                        Inventario
                     </a>
-                    <a href="{{ route('reportes.requisiciones') }}"
-                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('reportes.requisiciones') ? 'bg-gray-100 text-gray-900' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                        Requisiciones
-                    </a>
-                    <a href="{{ route('tickets.index') }}"
-                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('tickets.*') ? 'bg-gray-100 text-gray-900' : '' }}">
+                    <a href="{{ route('solicitudes.concentrado') }}"
+                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('solicitudes.concentrado') || request()->routeIs('tickets.*') || request()->routeIs('reportes.requisiciones') ? 'bg-gray-100 text-gray-900' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
                         </svg>
                         Solicitudes
                     </a>
                     @if(!$esVisitante)
-                    <a href="{{ route('reportes.barras') }}"
-                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('reportes.barras') ? 'bg-gray-100 text-gray-900' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                        </svg>
-                        Barras
-                    </a>
-                    <a href="{{ route('reportes.resguardo') }}"
-                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('reportes.resguardo') ? 'bg-gray-100 text-gray-900' : '' }}">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                        </svg>
-                        Resguardo
-                    </a>
                     <a href="{{ route('reportes.no_conforme') }}"
                        class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('reportes.no_conforme') ? 'bg-gray-100 text-gray-900' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,13 +112,39 @@
                             </svg>
                             Dashboard
                         </a>
-                        <a href="{{ route('solicitudes.index') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('solicitudes.*') ? 'bg-indigo-50 font-medium' : '' }}"
-                           style="{{ request()->routeIs('solicitudes.*') ? 'color:#4A568D;' : '' }}">
+                        @endif
+                        <a href="{{ route('reportes.entradas') }}"
+                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.entradas') ? 'bg-indigo-50 font-medium' : '' }}"
+                           style="{{ request()->routeIs('reportes.entradas') ? 'color:#4A568D;' : '' }}">
                             <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                             </svg>
-                            Requisiciones
+                            Inventario
+                        </a>
+                        <a href="{{ route('solicitudes.concentrado') }}"
+                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('solicitudes.concentrado') || request()->routeIs('tickets.*') || request()->routeIs('reportes.requisiciones') ? 'bg-indigo-50 font-medium' : '' }}"
+                           style="{{ request()->routeIs('solicitudes.concentrado') || request()->routeIs('tickets.*') || request()->routeIs('reportes.requisiciones') ? 'color:#4A568D;' : '' }}">
+                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
+                            </svg>
+                            Solicitudes
+                        </a>
+                        @if(!$esVisitante)
+                        <a href="{{ route('reportes.no_conforme') }}"
+                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.no_conforme') ? 'bg-indigo-50 font-medium' : '' }}"
+                           style="{{ request()->routeIs('reportes.no_conforme') ? 'color:#4A568D;' : '' }}">
+                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            No Conforme
+                        </a>
+                        <a href="{{ route('reportes.inventario_general') }}"
+                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.inventario_general') ? 'bg-indigo-50 font-medium' : '' }}"
+                           style="{{ request()->routeIs('reportes.inventario_general') ? 'color:#4A568D;' : '' }}">
+                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            Inventario General
                         </a>
                         <a href="{{ route('movimientos.index') }}"
                            class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('movimientos.*') ? 'bg-indigo-50 font-medium' : '' }}"
@@ -166,68 +173,6 @@
                             Usuarios
                         </a>
                         @endif
-                        <div class="border-t border-gray-100 my-1"></div>
-                        <div class="px-3 py-1.5">
-                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Reportes</p>
-                        </div>
-                        @endif
-                        <a href="{{ route('reportes.entradas') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.entradas') ? 'bg-indigo-50 font-medium' : '' }}"
-                           style="{{ request()->routeIs('reportes.entradas') ? 'color:#4A568D;' : '' }}">
-                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                            </svg>
-                            Inventario
-                        </a>
-                        <a href="{{ route('reportes.requisiciones') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.requisiciones') ? 'bg-indigo-50 font-medium' : '' }}"
-                           style="{{ request()->routeIs('reportes.requisiciones') ? 'color:#4A568D;' : '' }}">
-                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            Mis Requisiciones
-                        </a>
-                        <a href="{{ route('tickets.index') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('tickets.*') ? 'bg-indigo-50 font-medium' : '' }}"
-                           style="{{ request()->routeIs('tickets.*') ? 'color:#4A568D;' : '' }}">
-                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
-                            </svg>
-                            Solicitudes
-                        </a>
-                        @if(!$esVisitante)
-                        {{-- <a href="{{ route('reportes.barras') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.barras') ? 'bg-indigo-50 font-medium' : '' }}"
-                           style="{{ request()->routeIs('reportes.barras') ? 'color:#4A568D;' : '' }}">
-                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                            </svg>
-                            Barras
-                        </a> --}}
-                        <a href="{{ route('reportes.resguardo') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.resguardo') ? 'bg-indigo-50 font-medium' : '' }}"
-                           style="{{ request()->routeIs('reportes.resguardo') ? 'color:#4A568D;' : '' }}">
-                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                            </svg>
-                            Resguardo de Almacén
-                        </a>
-                        <a href="{{ route('reportes.no_conforme') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.no_conforme') ? 'bg-indigo-50 font-medium' : '' }}"
-                           style="{{ request()->routeIs('reportes.no_conforme') ? 'color:#4A568D;' : '' }}">
-                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                            No Conforme
-                        </a>
-                        <a href="{{ route('reportes.inventario_general') }}"
-                           class="flex items-center gap-2.5 px-3 py-2 text-sm font-medium hover:bg-gray-50 transition {{ request()->routeIs('reportes.inventario_general') ? 'bg-indigo-50' : '' }}"
-                           style="color:#4A568D;">
-                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                            Inventario General
-                        </a>
                         @endif
                     </div>
                 </div>
@@ -257,7 +202,7 @@
     </nav>
     @endauth
 
-    <main class="py-5">
+    <main class="py-5 flex-1">
         <div class="w-full px-4 sm:px-6">
             @yield('content')
         </div>
