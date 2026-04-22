@@ -126,6 +126,7 @@ class ProductoApiController extends Controller
                 'productos.id',
                 'productos.codigo',
                 'productos.descripcion',
+                'productos.unidad_medida_id',
                 'ubicaciones.codigo as ubicacion',
                 'unidades_medida.codigo as um',
                 'productos.cantidad_fisica as fisico',

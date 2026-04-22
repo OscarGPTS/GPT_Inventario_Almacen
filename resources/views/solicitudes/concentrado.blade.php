@@ -66,24 +66,22 @@
             </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-            @if(!auth()->user()->hasRole('visitante'))
-            <button onclick="abrirModalMaterial()"
-                class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95 border-2 border-white/30"
+            <button onclick="abrirModalSolicitarPieza()"
+                class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
                 style="background-color:#0d7a6b;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                 </svg>
-                Nueva Req. Material
+                Solicitar Pieza
             </button>
-            <a href="{{ route('tickets.create') }}"
-               class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
-               style="background-color:{{ $acento }}">
+            <button onclick="abrirModalMoverPiezaConc()"
+                class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
+                style="background-color:{{ $acento }};">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                 </svg>
-                Nueva Sol. Movimiento
-            </a>
-            @endif
+                Mover Pieza
+            </button>
         </div>
     </div>
 
@@ -394,9 +392,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                 </svg>
                                 <span>Sin requisiciones de material</span>
-                                @if(!auth()->user()->hasRole('visitante'))
-                                <button type="button" onclick="abrirModalMaterial()" class="text-sm font-medium hover:underline text-teal-700">Crear primera requisici&oacute;n &rarr;</button>
-                                @endif
+                                <button type="button" onclick="abrirModalSolicitarPieza()" class="text-sm font-medium hover:underline text-teal-700">Crear primera requisici&oacute;n &rarr;</button>
                             </div>
                         </td>
                     </tr>
@@ -538,9 +534,9 @@
 
             <div class="grid grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha <span class="text-red-500">*</span></label>
-                    <input type="date" name="fecha" value="{{ now()->format('Y-m-d') }}" required
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha</label>
+                    <input type="date" name="fecha" value="{{ now()->format('Y-m-d') }}" readonly
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-default">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha Requerida</label>
@@ -651,15 +647,16 @@ function abrirModalMaterial() {
     m.classList.add('flex');
     document.body.style.overflow = 'hidden';
     document.getElementById('formMaterial').reset();
-    ['depto_id_m','depto_nombre_m','prod_id_m','um_id_m'].forEach(id => {
+    ['depto_id_m','prod_id_m','um_id_m'].forEach(id => {
         const el = document.getElementById(id); if(el) el.value = '';
     });
     document.getElementById('prod_preview_m').classList.add('hidden');
-    document.getElementById('deptoNuevoTagM').classList.add('hidden');
     const btn = document.getElementById('btnGuardarMat');
     btn.disabled = false;
     btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Guardar Requisición`;
-    setTimeout(() => document.getElementById('depto_search_m')?.focus(), 120);
+    // Auto-cargar departamento del usuario
+    cargarDepartamentoUsuario('depto_id_m', 'depto_display_m');
+    setTimeout(() => document.getElementById('prod_search_m')?.focus(), 120);
 }
 function cerrarModalMaterial() {
     const m = document.getElementById('modalMaterial');
@@ -742,14 +739,27 @@ function crearTypeaheadC({ inputId, dropdownId, hiddenId, endpoint, renderItem, 
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function hlText(t, q) { if (!q) return escHtml(t); const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'); return escHtml(t).replace(re, '<mark class="bg-yellow-100">$1</mark>'); }
 
-// Departamento
-crearTypeaheadC({
-    inputId: 'depto_search_m', dropdownId: 'depto_dropdown_m', hiddenId: 'depto_id_m',
-    hiddenNombreId: 'depto_nombre_m', nuevoTagId: 'deptoNuevoTagM',
-    endpoint: '/api/v1/departamentos/buscar', allowCreate: true,
-    renderItem: (item, q) => `<svg class="w-3.5 h-3.5 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>${hlText(item.label||item.nombre||'', q)}`,
-    onSelect: () => {},
-});
+// Función compartida: carga departamento del usuario logueado
+async function cargarDepartamentoUsuario(hiddenId, displayId) {
+    const hiddenEl  = document.getElementById(hiddenId);
+    const displayEl = document.getElementById(displayId);
+    if (!hiddenEl || !displayEl) return;
+    displayEl.textContent = 'Cargando…';
+    try {
+        const r = await fetch('/usuarios/info-rh');
+        const j = await r.json();
+        if (j.departamento_id) {
+            hiddenEl.value = j.departamento_id;
+            displayEl.textContent = j.departamento_nombre || 'Departamento asignado';
+        } else {
+            hiddenEl.value = '';
+            displayEl.textContent = j.departamento_nombre || 'Sin departamento asignado';
+        }
+    } catch(e) {
+        hiddenEl.value = '';
+        displayEl.textContent = 'No disponible';
+    }
+}
 
 // Producto
 crearTypeaheadC({
@@ -788,21 +798,10 @@ async function autoFillUMM(umCodigo) {
 
 /* ─── Validación pre-submit ─────────────── */
 document.getElementById('formMaterial').addEventListener('submit', function(e) {
-    const prodId  = document.getElementById('prod_id_m').value;
-    const deptoId = document.getElementById('depto_id_m').value;
-    const deptoNom = document.getElementById('depto_nombre_m').value;
-
+    const prodId = document.getElementById('prod_id_m').value;
     if (!prodId) {
         e.preventDefault();
         const el = document.getElementById('prod_search_m');
-        el.classList.add('border-red-400','ring-2','ring-red-200');
-        el.focus();
-        setTimeout(() => el.classList.remove('border-red-400','ring-2','ring-red-200'), 2500);
-        return;
-    }
-    if (!deptoId && !deptoNom) {
-        e.preventDefault();
-        const el = document.getElementById('depto_search_m');
         el.classList.add('border-red-400','ring-2','ring-red-200');
         el.focus();
         setTimeout(() => el.classList.remove('border-red-400','ring-2','ring-red-200'), 2500);
@@ -841,5 +840,457 @@ document.querySelectorAll('.estado-select-mat').forEach(sel => {
         }
     });
 });
+</script>
+
+{{-- ══════════════════════════════════════
+     MODAL: SOLICITAR PIEZA (visitante)
+══════════════════════════════════════ --}}
+<div id="modalSolicitarPieza" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white" style="background-color:#0d7a6b;">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                <span class="font-semibold text-base">Solicitar Pieza</span>
+            </div>
+            <button onclick="cerrarModalSolicitarPieza()" class="text-white opacity-70 hover:opacity-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ route('solicitudes.store') }}" id="formSolicitarPieza" class="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+            @csrf
+            <input type="hidden" name="producto_id" id="sp_producto_id">
+            <input type="hidden" name="unidad_medida_id" id="sp_unidad_id">
+            <input type="hidden" name="fecha" id="sp_fecha">
+            <input type="hidden" name="estado" value="pendiente">
+
+            {{-- Búsqueda de producto --}}
+            <div class="relative">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">
+                    Producto <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="text" id="sp_buscar_prod" autocomplete="off"
+                           placeholder="Buscar por código o descripción..."
+                           class="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition">
+                    <svg class="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <svg id="sp_spinner" class="animate-spin absolute right-2.5 top-2.5 w-4 h-4 text-teal-500 hidden" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                </div>
+                <div id="sp_resultados" class="absolute z-10 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 w-full max-h-52 overflow-y-auto hidden"></div>
+                <div id="sp_prod_seleccionado" class="hidden mt-2 flex items-center gap-2 px-3 py-2 bg-teal-50 border border-teal-200 rounded-lg text-sm">
+                    <svg class="w-4 h-4 shrink-0 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="sp_prod_texto" class="font-medium text-teal-800 flex-1"></span>
+                    <button type="button" onclick="limpiarProductoSP()" class="text-teal-500 hover:text-red-500 transition text-xs">✕ Quitar</button>
+                </div>
+            </div>
+
+            {{-- Folio + Fecha --}}
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="sp_folio" class="block text-xs font-semibold text-gray-600 mb-1">
+                        Folio <span class="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <input type="text" name="folio" id="sp_folio" maxlength="50"
+                           placeholder="Se autogenera si lo dejas vacío"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Fecha</label>
+                    <p class="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2" id="sp_fecha_display">—</p>
+                </div>
+            </div>
+
+            {{-- Solicitante + Departamento --}}
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Solicitante</label>
+                    <input type="text" name="solicitante" id="sp_solicitante" required maxlength="100"
+                           value="{{ auth()->user()->name }}" readonly
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600 cursor-default">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Departamento</label>
+                    <input type="hidden" name="departamento_id" id="sp_departamento">
+                    <p id="sp_depto_display" class="text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 truncate">Cargando…</p>
+                </div>
+            </div>
+
+            {{-- Cantidad + Unidad --}}
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="sp_cantidad" class="block text-xs font-semibold text-gray-600 mb-1">
+                        Cantidad <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="cantidad" id="sp_cantidad" required min="1"
+                           placeholder="1"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">
+                        Unidad de Medida <span class="text-red-500">*</span>
+                    </label>
+                    <p id="sp_unidad_display" class="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                        Selecciona un producto primero
+                    </p>
+                </div>
+            </div>
+
+            {{-- Observaciones --}}
+            <div>
+                <label for="sp_observaciones" class="block text-xs font-semibold text-gray-600 mb-1">Observaciones</label>
+                <textarea name="observaciones" id="sp_observaciones" rows="3"
+                    placeholder="Instrucciones adicionales, urgencia, etc."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none transition"></textarea>
+            </div>
+        </form>
+
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 rounded-b-2xl bg-gray-50">
+            <p class="text-xs text-gray-400"><span class="text-red-500">*</span> Campos requeridos</p>
+            <div class="flex gap-3">
+                <button type="button" onclick="cerrarModalSolicitarPieza()"
+                    class="px-5 py-2 bg-white border border-gray-300 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+                    Cancelar
+                </button>
+                <button type="submit" form="formSolicitarPieza" id="btnGuardarSP"
+                    class="px-6 py-2 text-white text-sm font-semibold rounded-xl transition hover:opacity-90 active:scale-95 flex items-center gap-2"
+                    style="background-color:#0d7a6b;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                    Enviar Solicitud
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ══════════════════════════════════════
+     MODAL: MOVER PIEZA (visitante)
+══════════════════════════════════════ --}}
+<div id="modalMoverPiezaConc" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white" style="background-color:#4A568D;">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                <span class="font-semibold text-base">Solicitud de Movimiento de Pieza</span>
+            </div>
+            <button onclick="cerrarModalMoverPiezaConc()" class="text-white opacity-70 hover:opacity-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ route('tickets.store') }}" id="formMoverPiezaConc"
+              enctype="multipart/form-data" class="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+            @csrf
+            <input type="hidden" name="producto_id" id="mpc_producto_id">
+
+            {{-- Búsqueda de producto --}}
+            <div class="relative">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">
+                    Producto <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="text" id="mpc_buscar_prod" autocomplete="off"
+                           placeholder="Buscar por código o descripción..."
+                           class="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 transition" style="--tw-ring-color:#4A568D;">
+                    <svg class="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <svg id="mpc_spinner" class="animate-spin absolute right-2.5 top-2.5 w-4 h-4 hidden" style="color:#4A568D" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                </div>
+                <div id="mpc_resultados" class="absolute z-10 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 w-full max-h-52 overflow-y-auto hidden"></div>
+                <div id="mpc_prod_seleccionado" class="hidden mt-2 flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-sm">
+                    <svg class="w-4 h-4 shrink-0" style="color:#4A568D" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="mpc_prod_texto" class="font-medium text-indigo-800 flex-1"></span>
+                    <button type="button" onclick="limpiarProductoMPC()" class="text-indigo-400 hover:text-red-500 transition text-xs">✕ Quitar</button>
+                </div>
+            </div>
+
+            {{-- Título --}}
+            <div>
+                <label for="mpc_title" class="block text-xs font-semibold text-gray-600 mb-1">
+                    Título de la solicitud <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="title" id="mpc_title" required
+                       placeholder="Ej: Mover piezas del almacén A a zona de producción"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition" style="--tw-ring-color:#4A568D;">
+            </div>
+
+            {{-- Descripción --}}
+            <div>
+                <label for="mpc_description" class="block text-xs font-semibold text-gray-600 mb-1">
+                    Descripción detallada <span class="text-red-500">*</span>
+                </label>
+                <textarea name="description" id="mpc_description" rows="4" required
+                    placeholder="Incluye: tipo de movimiento, cantidad, origen, destino, instrucciones especiales..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none transition"></textarea>
+            </div>
+
+            {{-- Imágenes --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">
+                    Imágenes de referencia <span class="text-gray-400 font-normal">(opcional, máx. 5)</span>
+                </label>
+                <div id="mpc_dropZone"
+                     class="border-2 border-dashed border-gray-300 rounded-xl p-5 text-center hover:border-indigo-400 transition cursor-pointer">
+                    <svg class="mx-auto w-8 h-8 text-gray-300 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="text-sm text-gray-500">Haz clic o arrastra imágenes aquí</p>
+                    <p class="text-xs text-gray-400 mt-0.5">PNG, JPG, JPEG — máx. 2 MB c/u</p>
+                    <input type="file" name="images[]" id="mpc_images" multiple accept="image/*" class="hidden">
+                </div>
+                <div id="mpc_imagePreview" class="mt-2 grid grid-cols-5 gap-2 hidden"></div>
+            </div>
+        </form>
+
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 rounded-b-2xl bg-gray-50">
+            <p class="text-xs text-gray-400"><span class="text-red-500">*</span> Campos requeridos</p>
+            <div class="flex gap-3">
+                <button type="button" onclick="cerrarModalMoverPiezaConc()"
+                    class="px-5 py-2 bg-white border border-gray-300 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+                    Cancelar
+                </button>
+                <button type="submit" form="formMoverPiezaConc" id="btnGuardarMPC"
+                    class="px-6 py-2 text-white text-sm font-semibold rounded-xl transition hover:opacity-90 active:scale-95 flex items-center gap-2"
+                    style="background-color:#4A568D;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                    Enviar Solicitud
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   HELPERS BÚSQUEDA DE PRODUCTOS (compartido por ambos modales)
+════════════════════════════════════════════════════════════ */
+const API_BUSCAR = '{{ route("api.productos.search") }}';
+let spDebounce = null, mpcDebounce = null;
+
+function buscarProductos(q, spinnerId, callback) {
+    const spinner = spinnerId ? document.getElementById(spinnerId) : null;
+    if (q.length < 2) {
+        if (spinner) spinner.classList.add('hidden');
+        return callback([]);
+    }
+    if (spinner) spinner.classList.remove('hidden');
+    fetch(API_BUSCAR + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            if (spinner) spinner.classList.add('hidden');
+            callback(Array.isArray(data) ? data : (data.data || []));
+        })
+        .catch(() => {
+            if (spinner) spinner.classList.add('hidden');
+            callback([]);
+        });
+}
+
+function renderResultados(items, containerId, onSelect) {
+    const box = document.getElementById(containerId);
+    if (!items.length) { box.classList.add('hidden'); return; }
+    box.innerHTML = items.map(p =>
+        `<div class="px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b last:border-0 text-sm" data-id="${p.id}" data-codigo="${p.codigo||''}" data-desc="${(p.descripcion||'').replace(/"/g,'&quot;')}" data-um-id="${p.unidad_medida_id||''}" data-um="${p.um||''}">
+            <span class="font-medium text-gray-800">${p.codigo||''}</span>
+            <span class="text-gray-500 ml-2">${p.descripcion||''}</span>
+        </div>`
+    ).join('');
+    box.querySelectorAll('[data-id]').forEach(el => {
+        el.addEventListener('click', () => onSelect(el.dataset));
+    });
+    box.classList.remove('hidden');
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODAL SOLICITAR PIEZA
+════════════════════════════════════════════════════════════ */
+function abrirModalSolicitarPieza() {
+    const m = document.getElementById('modalSolicitarPieza');
+    m.classList.remove('hidden'); m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('formSolicitarPieza').reset();
+    limpiarProductoSP();
+    // Fecha de hoy
+    const hoy = new Date();
+    const fechaIso = hoy.toISOString().split('T')[0];
+    document.getElementById('sp_fecha').value = fechaIso;
+    document.getElementById('sp_fecha_display').textContent = hoy.toLocaleDateString('es-MX', { day:'2-digit', month:'long', year:'numeric' });
+    document.getElementById('btnGuardarSP').disabled = false;
+    document.getElementById('btnGuardarSP').innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Enviar Solicitud`;
+    // Auto-cargar departamento del usuario
+    cargarDepartamentoUsuario('sp_departamento', 'sp_depto_display');
+    setTimeout(() => document.getElementById('sp_buscar_prod').focus(), 120);
+}
+
+function cerrarModalSolicitarPieza() {
+    const m = document.getElementById('modalSolicitarPieza');
+    m.classList.add('hidden'); m.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+function limpiarProductoSP() {
+    document.getElementById('sp_producto_id').value = '';
+    document.getElementById('sp_unidad_id').value = '';
+    document.getElementById('sp_prod_seleccionado').classList.add('hidden');
+    document.getElementById('sp_buscar_prod').value = '';
+    document.getElementById('sp_buscar_prod').classList.remove('hidden');
+    document.getElementById('sp_unidad_display').textContent = 'Selecciona un producto primero';
+    document.getElementById('sp_resultados').classList.add('hidden');
+}
+
+document.getElementById('sp_buscar_prod').addEventListener('input', function() {
+    clearTimeout(spDebounce);
+    const val = this.value;
+    spDebounce = setTimeout(() => {
+        buscarProductos(val, 'sp_spinner', items =>
+            renderResultados(items, 'sp_resultados', datos => {
+                document.getElementById('sp_producto_id').value = datos.id;
+                document.getElementById('sp_unidad_id').value   = datos.umId || '';
+                document.getElementById('sp_prod_texto').textContent = datos.codigo + (datos.desc ? ' — ' + datos.desc : '');
+                document.getElementById('sp_unidad_display').textContent = datos.um || '—';
+                document.getElementById('sp_prod_seleccionado').classList.remove('hidden');
+                document.getElementById('sp_buscar_prod').classList.add('hidden');
+                document.getElementById('sp_resultados').classList.add('hidden');
+            })
+        );
+    }, 300);
+});
+
+document.getElementById('modalSolicitarPieza').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalSolicitarPieza();
+});
+
+document.getElementById('formSolicitarPieza').addEventListener('submit', function(e) {
+    if (!document.getElementById('sp_producto_id').value) {
+        e.preventDefault();
+        document.getElementById('sp_buscar_prod').classList.remove('hidden');
+        document.getElementById('sp_buscar_prod').focus();
+        document.getElementById('sp_buscar_prod').style.borderColor = '#ef4444';
+        return;
+    }
+    const btn = document.getElementById('btnGuardarSP');
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Enviando...`;
+});
+
+/* ════════════════════════════════════════════════════════════
+   MODAL MOVER PIEZA (concentrado)
+════════════════════════════════════════════════════════════ */
+function abrirModalMoverPiezaConc() {
+    const m = document.getElementById('modalMoverPiezaConc');
+    m.classList.remove('hidden'); m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('formMoverPiezaConc').reset();
+    limpiarProductoMPC();
+    document.getElementById('mpc_imagePreview').innerHTML = '';
+    document.getElementById('mpc_imagePreview').classList.add('hidden');
+    document.getElementById('btnGuardarMPC').disabled = false;
+    document.getElementById('btnGuardarMPC').innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Enviar Solicitud`;
+    setTimeout(() => document.getElementById('mpc_buscar_prod').focus(), 120);
+}
+
+function cerrarModalMoverPiezaConc() {
+    const m = document.getElementById('modalMoverPiezaConc');
+    m.classList.add('hidden'); m.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+function limpiarProductoMPC() {
+    document.getElementById('mpc_producto_id').value = '';
+    document.getElementById('mpc_prod_seleccionado').classList.add('hidden');
+    document.getElementById('mpc_buscar_prod').value = '';
+    document.getElementById('mpc_buscar_prod').classList.remove('hidden');
+    document.getElementById('mpc_resultados').classList.add('hidden');
+}
+
+document.getElementById('mpc_buscar_prod').addEventListener('input', function() {
+    clearTimeout(mpcDebounce);
+    const val = this.value;
+    mpcDebounce = setTimeout(() => {
+        buscarProductos(val, 'mpc_spinner', items =>
+            renderResultados(items, 'mpc_resultados', datos => {
+                document.getElementById('mpc_producto_id').value = datos.id;
+                document.getElementById('mpc_prod_texto').textContent = datos.codigo + (datos.desc ? ' — ' + datos.desc : '');
+                document.getElementById('mpc_prod_seleccionado').classList.remove('hidden');
+                document.getElementById('mpc_buscar_prod').classList.add('hidden');
+                document.getElementById('mpc_resultados').classList.add('hidden');
+            })
+        );
+    }, 300);
+});
+
+document.getElementById('modalMoverPiezaConc').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalMoverPiezaConc();
+});
+
+document.getElementById('formMoverPiezaConc').addEventListener('submit', function(e) {
+    if (!document.getElementById('mpc_producto_id').value) {
+        e.preventDefault();
+        document.getElementById('mpc_buscar_prod').classList.remove('hidden');
+        document.getElementById('mpc_buscar_prod').focus();
+        document.getElementById('mpc_buscar_prod').style.borderColor = '#ef4444';
+        return;
+    }
+    const btn = document.getElementById('btnGuardarMPC');
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Enviando...`;
+});
+
+// Drag & drop imágenes (Mover Pieza)
+(function() {
+    const dropZone = document.getElementById('mpc_dropZone');
+    const input    = document.getElementById('mpc_images');
+    const preview  = document.getElementById('mpc_imagePreview');
+    dropZone.addEventListener('click', () => input.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-indigo-400','bg-indigo-50'); });
+    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-indigo-400','bg-indigo-50'); });
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('border-indigo-400','bg-indigo-50');
+        input.files = e.dataTransfer.files;
+        renderMpcPreview();
+    });
+    input.addEventListener('change', renderMpcPreview);
+    function renderMpcPreview() {
+        preview.innerHTML = '';
+        const files = Array.from(input.files).slice(0, 5);
+        if (!files.length) { preview.classList.add('hidden'); return; }
+        preview.classList.remove('hidden');
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const div = document.createElement('div');
+                div.className = 'relative group rounded-lg overflow-hidden border border-gray-200';
+                div.innerHTML = `<img src="${e.target.result}" class="w-full h-16 object-cover">`;
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+})();
 </script>
 @endsection

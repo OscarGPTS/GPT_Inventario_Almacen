@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('solicitudes', function (Blueprint $table) {
             $table->id();
-            $table->string('folio', 50)->unique();
+            $table->string('folio', 50)->nullable();
             $table->date('fecha');
             $table->string('solicitante', 100);
             $table->foreignId('departamento_id')->constrained('departamentos');

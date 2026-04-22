@@ -9,8 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('solicitudes', function (Blueprint $table) {
-            // Hacer folio nullable y eliminar restricción unique
-            $table->dropUnique('solicitudes_folio_unique');
+            // folio ya es nullable desde la migración base (sin unique)
             $table->string('folio', 50)->nullable()->change();
 
             // Prioridad de la solicitud

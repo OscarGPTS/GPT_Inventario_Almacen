@@ -38,6 +38,7 @@
         </div>
         <div class="flex gap-2">
 
+            @if(!auth()->user()->hasRole('visitante'))
             <button onclick="abrirModalNuevoProducto()" 
                 class="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow transition hover:opacity-90 active:scale-95"
                 style="background-color:#4A568D">
@@ -46,6 +47,7 @@
                 </svg>
                 Nuevo Producto
             </button>
+            @endif
 
             @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('admin_almacen'))
             <button onclick="abrirModalCargaMasiva()" 
@@ -1204,6 +1206,12 @@ function mostrarPreviewTabla(rows, headers, codigoIndex) {
 
 document.getElementById('modalCargaMasiva').addEventListener('click', e => { 
     if (e.target === document.getElementById('modalCargaMasiva')) cerrarModalCargaMasiva(); 
+});
+
+document.getElementById('formCargaMasiva').addEventListener('submit', function() {
+    const btn = document.getElementById('btn_confirmar');
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Cargando...`;
 });
 
 // ==================== BÚSQUEDA DINÁMICA CON API ====================

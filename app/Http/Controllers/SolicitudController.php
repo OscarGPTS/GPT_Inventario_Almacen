@@ -8,6 +8,7 @@ use App\Models\Departamento;
 use App\Models\UnidadMedida;
 use App\Models\Movimiento;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SolicitudController extends Controller
 {
@@ -44,7 +45,7 @@ class SolicitudController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'folio' => 'required|string|max:50|unique:solicitudes,folio',
+            'folio' => 'nullable|string|max:50|unique:solicitudes,folio',
             'fecha' => 'required|date',
             'solicitante' => 'required|string|max:100',
             'departamento_id' => 'required|exists:departamentos,id',
@@ -53,6 +54,10 @@ class SolicitudController extends Controller
             'unidad_medida_id' => 'required|exists:unidades_medida,id',
             'observaciones' => 'nullable|string',
         ]);
+
+        if (empty($validated['folio'])) {
+            $validated['folio'] = 'REQ-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5));
+        }
 
         $validated['usuario_registro_id'] = auth()->id();
         $validated['estado'] = 'pendiente';
