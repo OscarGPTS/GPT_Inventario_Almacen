@@ -11,11 +11,15 @@ use App\Http\Controllers\ReportesController;
 use App\Http\Controllers\CatalogosController;
 use App\Http\Controllers\UsuariosController;
 use App\Http\Controllers\NoConformidadController;
+use App\Http\Controllers\NotificacionesController;
 use App\Http\Controllers\TicketController;
 
 use App\Http\Middleware\SoloAdmin;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('reportes.entradas');
+    }
     return view('welcome');
 })->name('welcome');
 
@@ -34,6 +38,7 @@ Route::get('/inventario', [ReportesController::class, 'inventarioPublico'])->nam
 // Rutas protegidas por autenticación
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/dashboard/tickets/{ticket}/asignar', [DashboardController::class, 'assignTicket'])->name('dashboard.tickets.assign');
     
     // Productos
     Route::get('/productos/search', [ProductoController::class, 'search'])->name('productos.search');
@@ -104,6 +109,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets/{ticket}/cancelar', [TicketController::class, 'cancel'])->name('tickets.cancel');
     Route::post('/tickets/{ticket}/encuesta', [TicketController::class, 'survey'])->name('tickets.survey');
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+
+    // Notificaciones web
+    Route::post('/notificaciones/{id}/leer', [NotificacionesController::class, 'leer'])->name('notificaciones.leer');
+    Route::post('/notificaciones/leer-todas', [NotificacionesController::class, 'leerTodas'])->name('notificaciones.leerTodas');
 
     // Logout
     Route::post('/logout', function () {

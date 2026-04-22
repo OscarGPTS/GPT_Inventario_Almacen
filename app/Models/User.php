@@ -24,7 +24,10 @@ class User extends Authenticatable implements LaratrustUser
         'email',
         'password',
         'google_id',
+        'provider_id',
+        'provider',
         'avatar',
+        'last_login_at',
     ];
 
     /**
@@ -46,6 +49,7 @@ class User extends Authenticatable implements LaratrustUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at'     => 'datetime',
             'password' => 'hashed',
         ];
     }

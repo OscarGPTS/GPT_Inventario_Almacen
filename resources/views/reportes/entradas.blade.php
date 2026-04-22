@@ -301,14 +301,15 @@
                                     </svg>
                                     Solicitar Pieza
                                 </button>
-                                <a href="{{ route('tickets.create', ['producto_id' => $p->id]) }}"
+                                <button type="button"
+                                    onclick="abrirModalMoverPieza({{ $p->id }}, '{{ addslashes($p->codigo) }}', '{{ addslashes($p->descripcion) }}')"
                                     title="Crear solicitud de movimiento para este producto"
                                     class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition whitespace-nowrap">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                     </svg>
                                     Mover Pieza
-                                </a>
+                                </button>
                                 @if(!auth()->user()->hasRole('visitante'))
                                 <button type="button"
                                     onclick="abrirModalEditar({{ $editData }})"
@@ -2109,5 +2110,189 @@ async function guardarNCEntradas() {
     </div>
 </div>
 @endif
+
+{{-- ═══════════════════════════════════════════════════════════════
+     MODAL MOVER PIEZA (Solicitud de Movimiento)
+═══════════════════════════════════════════════════════════════ --}}
+<div id="modalMoverPieza" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.45);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white" style="background-color:#0d7a6b;">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                <span class="font-semibold text-base">Nueva Solicitud de Movimiento</span>
+            </div>
+            <button onclick="cerrarModalMoverPieza()" class="text-white opacity-70 hover:opacity-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Body --}}
+        <form method="POST" action="{{ route('tickets.store') }}" id="formMoverPieza"
+              enctype="multipart/form-data" class="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+            @csrf
+            <input type="hidden" name="producto_id" id="mp_producto_id">
+
+            {{-- Producto (solo lectura) --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Producto</label>
+                <div class="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <svg class="w-4 h-4 shrink-0" style="color:#0d7a6b" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span id="mp_prod_display" class="font-medium text-gray-800">—</span>
+                </div>
+            </div>
+
+            {{-- Título --}}
+            <div>
+                <label for="mp_title" class="block text-xs font-semibold text-gray-600 mb-1">
+                    Título de la solicitud <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="title" id="mp_title" required
+                       placeholder="Ej: Mover piezas del almacén A a zona de producción"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition" style="--tw-ring-color:#0d7a6b;">
+            </div>
+
+            {{-- Descripción --}}
+            <div>
+                <label for="mp_description" class="block text-xs font-semibold text-gray-600 mb-1">
+                    Descripción detallada <span class="text-red-500">*</span>
+                </label>
+                <textarea name="description" id="mp_description" rows="4" required
+                    placeholder="Incluye: tipo de movimiento, cantidad, origen, destino, instrucciones especiales..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none transition"></textarea>
+                <p class="text-xs text-gray-400 mt-1">Máximo 5,000 caracteres</p>
+            </div>
+
+            {{-- Imágenes --}}
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">
+                    Imágenes de referencia <span class="text-gray-400 font-normal">(opcional, máx. 5)</span>
+                </label>
+                <div id="mp_dropZone"
+                     class="border-2 border-dashed border-gray-300 rounded-xl p-5 text-center hover:border-teal-400 transition cursor-pointer">
+                    <svg class="mx-auto w-8 h-8 text-gray-300 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p class="text-sm text-gray-500">Haz clic o arrastra imágenes aquí</p>
+                    <p class="text-xs text-gray-400 mt-0.5">PNG, JPG, JPEG, GIF — máx. 2 MB c/u</p>
+                    <input type="file" name="images[]" id="mp_images" multiple accept="image/*" class="hidden">
+                </div>
+                <div id="mp_imagePreview" class="mt-2 grid grid-cols-5 gap-2 hidden"></div>
+            </div>
+        </form>
+
+        {{-- Footer --}}
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 rounded-b-2xl bg-gray-50">
+            <p class="text-xs text-gray-400"><span class="text-red-500">*</span> Campos requeridos</p>
+            <div class="flex gap-3">
+                <button type="button" onclick="cerrarModalMoverPieza()"
+                    class="px-5 py-2 bg-white border border-gray-300 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+                    Cancelar
+                </button>
+                <button type="submit" form="formMoverPieza" id="btnGuardarMoverPieza"
+                    class="px-6 py-2 text-white text-sm font-semibold rounded-xl transition hover:opacity-90 active:scale-95 flex items-center gap-2"
+                    style="background-color:#0d7a6b;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                    Enviar Solicitud
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL MOVER PIEZA
+═══════════════════════════════════════════════════════════════════ */
+function abrirModalMoverPieza(productoId, codigo, descripcion) {
+    const m = document.getElementById('modalMoverPieza');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('formMoverPieza').reset();
+    document.getElementById('mp_imagePreview').innerHTML = '';
+    document.getElementById('mp_imagePreview').classList.add('hidden');
+
+    document.getElementById('mp_producto_id').value    = productoId;
+    document.getElementById('mp_prod_display').textContent = codigo + (descripcion ? ' — ' + descripcion : '');
+
+    const btn = document.getElementById('btnGuardarMoverPieza');
+    btn.disabled = false;
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg> Enviar Solicitud`;
+
+    setTimeout(() => document.getElementById('mp_title')?.focus(), 120);
+}
+
+function cerrarModalMoverPieza() {
+    const m = document.getElementById('modalMoverPieza');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+// Cerrar al hacer clic en el fondo
+document.getElementById('modalMoverPieza').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalMoverPieza();
+});
+
+// Drag & drop de imágenes
+(function() {
+    const dropZone = document.getElementById('mp_dropZone');
+    const input    = document.getElementById('mp_images');
+    const preview  = document.getElementById('mp_imagePreview');
+
+    dropZone.addEventListener('click', () => input.click());
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('border-teal-400', 'bg-teal-50');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-teal-400', 'bg-teal-50');
+    });
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('border-teal-400', 'bg-teal-50');
+        input.files = e.dataTransfer.files;
+        renderMpPreview();
+    });
+    input.addEventListener('change', renderMpPreview);
+
+    function renderMpPreview() {
+        preview.innerHTML = '';
+        const files = Array.from(input.files).slice(0, 5);
+        if (!files.length) { preview.classList.add('hidden'); return; }
+        preview.classList.remove('hidden');
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const div = document.createElement('div');
+                div.className = 'relative group rounded-lg overflow-hidden border border-gray-200';
+                div.innerHTML = `<img src="${e.target.result}" class="w-full h-16 object-cover">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01"/></svg>
+                    </div>`;
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+})();
+
+// Deshabilitar doble submit
+document.getElementById('formMoverPieza').addEventListener('submit', function() {
+    const btn = document.getElementById('btnGuardarMoverPieza');
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Enviando...`;
+});
+</script>
 
 @endsection

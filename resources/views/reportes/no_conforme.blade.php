@@ -52,10 +52,10 @@
                 </svg>
                 <input type="text" name="search" value="{{ request('search') }}"
                     placeholder="Buscar por código, descripción, resolución..."
-                    class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition"
+                    class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
                     autocomplete="off">
             </div>
-            <select name="estatus" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            <select name="estatus" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                 <option value="">Todos los estatus</option>
                 <option value="abierta" {{ request('estatus') === 'abierta' ? 'selected' : '' }}>Abierta</option>
                 <option value="en_proceso" {{ request('estatus') === 'en_proceso' ? 'selected' : '' }}>En proceso</option>
@@ -116,7 +116,7 @@
                         <td class="px-3 py-2 text-center whitespace-nowrap">
                             @if(!$esVisitante && !in_array($nc->estatus, ['cerrada']))
                             <select data-nc-id="{{ $nc->id }}" onchange="cambiarEstatus(this)"
-                                class="text-xs font-medium px-2 py-1 rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300 {{ $badgeClass }}">
+                                class="text-xs font-medium px-2 py-1 rounded-lg border cursor-pointer bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-300 {{ $badgeClass }}">
                                 <option value="abierta" {{ $nc->estatus === 'abierta' ? 'selected' : '' }}>Abierta</option>
                                 <option value="en_proceso" {{ $nc->estatus === 'en_proceso' ? 'selected' : '' }}>En proceso</option>
                                 <option value="resuelta" {{ $nc->estatus === 'resuelta' ? 'selected' : '' }}>Resuelta</option>

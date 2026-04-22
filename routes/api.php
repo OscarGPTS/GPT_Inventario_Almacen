@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ProductoApiController;
 use App\Http\Controllers\Api\MovimientoApiController;
 use App\Http\Controllers\Api\CatalogoApiController;
 use App\Http\Controllers\Api\SolicitudApiController;
+use App\Http\Controllers\Api\MobileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,3 +60,27 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     });
 });
 */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rutas App Móvil — Solicitudes de Movimiento
+// Prefijo: /api/mobile/
+// Sin middleware de autenticación — validación por email / user_id
+// ─────────────────────────────────────────────────────────────────────────────
+Route::prefix('mobile')->group(function () {
+
+    // Autenticación Firebase: login o registro automático
+    Route::post('/auth/login',        [MobileController::class, 'loginOrRegister'])->name('api.mobile.auth.login');
+
+    // Tickets (Solicitudes de Movimiento)
+    Route::post('/tickets',           [MobileController::class, 'getTickets'])->name('api.mobile.tickets.index');
+    Route::post('/tickets/create',    [MobileController::class, 'createTicket'])->name('api.mobile.tickets.create');
+    Route::post('/tickets/assign',    [MobileController::class, 'assignTicket'])->name('api.mobile.tickets.assign');
+    Route::post('/tickets/complete',  [MobileController::class, 'completeTicket'])->name('api.mobile.tickets.complete');
+    Route::post('/tickets/completed', [MobileController::class, 'getCompletedTickets'])->name('api.mobile.tickets.completed');
+
+    // Usuarios de almacén disponibles para asignación
+    Route::get('/almacen-users',      [MobileController::class, 'getAlmacenUsers'])->name('api.mobile.almacen-users');
+
+    // Encuestas de satisfacción
+    Route::post('/surveys/complete',  [MobileController::class, 'completeSurvey'])->name('api.mobile.surveys.complete');
+});

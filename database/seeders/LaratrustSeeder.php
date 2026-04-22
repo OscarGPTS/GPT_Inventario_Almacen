@@ -15,7 +15,7 @@ class LaratrustSeeder extends Seeder
             ['name' => 'admin',          'display_name' => 'Administrador',          'description' => 'Acceso total al sistema'],
             ['name' => 'admin_almacen',  'display_name' => 'Admin Almacén',          'description' => 'Administración del almacén'],
             ['name' => 'almacenista',    'display_name' => 'Almacenista',            'description' => 'Operaciones del almacén'],
-            ['name' => 'visitante',      'display_name' => 'Visitante',              'description' => 'Solo lectura'],
+            ['name' => 'visitante',      'display_name' => 'Visitante / Solicitante', 'description' => 'Lectura + creación de solicitudes de movimiento desde app móvil'],
         ];
 
         foreach ($roles as $r) {
