@@ -1755,6 +1755,7 @@ document.getElementById('searchInput').addEventListener('keydown', function(even
         {{-- Body --}}
         <form method="POST" action="{{ route('solicitudes.nueva') }}" id="formRequisicion" class="overflow-y-auto flex-1 px-6 py-5 space-y-4">
             @csrf
+            <input type="hidden" name="estado" value="pendiente">
 
             {{-- Fila 1: Fecha / Fecha req. / Folio --}}
             <div class="grid grid-cols-3 gap-4">

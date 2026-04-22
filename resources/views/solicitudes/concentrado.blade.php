@@ -252,9 +252,17 @@
                             @else<span class="text-gray-400">—</span>@endif
                         </td>
                         <td class="px-3 py-2 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}">
-                                {{ ucfirst($r->estado) }}
-                            </span>
+                            @if($esGestor && !in_array($r->estado, ['entregada','cancelada']))
+                            <button type="button"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}"
+                                data-status-id="{{ $r->id }}" data-tipo="mat"
+                                data-url="{{ route('solicitudes.cambiarEstado', $r->id) }}"
+                                onclick="abrirPopoverEstado(event,{{ $r->id }},'{{ $r->estado }}','{{ route('solicitudes.cambiarEstado', $r->id) }}','mat')">
+                                {{ ucfirst($r->estado) }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $estadoBadgeSol[$r->estado] ?? '' }}">{{ ucfirst($r->estado) }}</span>
+                            @endif
                         </td>
                     </tr>
                     @empty
@@ -302,9 +310,17 @@
                         </td>
                         @if($esGestor)<td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $t->user->name ?? '—' }}</td>@endif
                         <td class="px-3 py-2 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">
-                                {{ $statusLabelTck[$t->status] ?? $t->status }}
-                            </span>
+                            @if($esGestor && !in_array($t->status, ['finalizado','cancelado']))
+                            <button type="button"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium border hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $badgeMapTck[$t->status] ?? '' }}"
+                                data-status-id="{{ $t->id }}" data-tipo="tck"
+                                data-url="{{ route('tickets.cambiarStatus', $t->id) }}"
+                                onclick="abrirPopoverEstado(event,{{ $t->id }},'{{ $t->status }}','{{ route('tickets.cambiarStatus', $t->id) }}','tck')">
+                                {{ $statusLabelTck[$t->status] ?? $t->status }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">{{ $statusLabelTck[$t->status] ?? $t->status }}</span>
+                            @endif
                         </td>
                         <td class="px-3 py-2 text-gray-600 whitespace-nowrap">{{ $t->assignedTo->name ?? '—' }}</td>
                         <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ $t->created_at->format('d/m/Y') }}</td>
@@ -366,18 +382,14 @@
                             @else<span class="text-gray-400">—</span>@endif
                         </td>
                         <td class="px-3 py-2 text-center whitespace-nowrap">
-                            @if($esGestor)
-                            <select
-                                class="estado-select-mat text-xs border-0 rounded-full px-2 py-0.5 font-semibold cursor-pointer {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}"
-                                data-id="{{ $r->id }}"
+                            @if($esGestor && !in_array($r->estado, ['entregada','cancelada']))
+                            <button type="button"
+                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}"
+                                data-status-id="{{ $r->id }}" data-tipo="mat"
                                 data-url="{{ route('solicitudes.cambiarEstado', $r->id) }}"
-                                data-orig="{{ $r->estado }}"
-                                style="appearance:none;-webkit-appearance:none;">
-                                <option value="pendiente" {{ $r->estado === 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                <option value="aprobada"  {{ $r->estado === 'aprobada'  ? 'selected' : '' }}>Aprobada</option>
-                                <option value="entregada" {{ $r->estado === 'entregada' ? 'selected' : '' }}>Entregada</option>
-                                <option value="cancelada" {{ $r->estado === 'cancelada' ? 'selected' : '' }}>Cancelada</option>
-                            </select>
+                                onclick="abrirPopoverEstado(event,{{ $r->id }},'{{ $r->estado }}','{{ route('solicitudes.cambiarEstado', $r->id) }}','mat')">
+                                {{ ucfirst($r->estado) }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
                             @else
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $estadoBadgeSol[$r->estado] ?? '' }}">{{ ucfirst($r->estado) }}</span>
                             @endif
@@ -451,9 +463,17 @@
                         <td class="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">{{ $t->user->name ?? '—' }}</td>
                         @endif
                         <td class="px-4 py-3 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">
-                                {{ $statusLabelTck[$t->status] ?? $t->status }}
-                            </span>
+                            @if($esGestor && !in_array($t->status, ['finalizado','cancelado']))
+                            <button type="button"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $badgeMapTck[$t->status] ?? '' }}"
+                                data-status-id="{{ $t->id }}" data-tipo="tck"
+                                data-url="{{ route('tickets.cambiarStatus', $t->id) }}"
+                                onclick="abrirPopoverEstado(event,{{ $t->id }},'{{ $t->status }}','{{ route('tickets.cambiarStatus', $t->id) }}','tck')">
+                                {{ $statusLabelTck[$t->status] ?? $t->status }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            @else
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">{{ $statusLabelTck[$t->status] ?? $t->status }}</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">{{ $t->assignedTo->name ?? '—' }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">
@@ -812,34 +832,113 @@ document.getElementById('formMaterial').addEventListener('submit', function(e) {
     btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Guardando...`;
 });
 
-/* ─── Estado inline AJAX (tab Material) ── */
-const ESTADO_CLASES_MAT = {
+/* ─── Popover de estado (compartido: material + tickets) ─── */
+const _BADGE_MAT = {
     pendiente: 'bg-yellow-100 text-yellow-800',
     aprobada : 'bg-blue-100 text-blue-800',
     entregada: 'bg-green-100 text-green-800',
     cancelada: 'bg-red-100 text-red-800',
 };
-document.querySelectorAll('.estado-select-mat').forEach(sel => {
-    sel.addEventListener('change', async function() {
-        const url    = this.dataset.url;
-        const estado = this.value;
-        const orig   = this.dataset.orig;
-        try {
-            const res = await fetch(url, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_C, 'Accept': 'application/json' },
-                body: JSON.stringify({ estado })
-            });
-            if (!res.ok) throw new Error('Error');
-            this.dataset.orig = estado;
-            const cls = ESTADO_CLASES_MAT[estado] || 'bg-gray-100 text-gray-600';
-            this.className = `estado-select-mat text-xs border-0 rounded-full px-2 py-0.5 font-semibold cursor-pointer ${cls}`;
-        } catch(e) {
-            this.value = orig;
-            alert('No se pudo actualizar el estado.');
-        }
+const _BADGE_TCK = {
+    pendiente : 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    en_proceso: 'bg-blue-100 text-blue-800 border-blue-200',
+    finalizado: 'bg-green-100 text-green-800 border-green-200',
+    cancelado : 'bg-red-100 text-red-800 border-red-200',
+};
+const _LABEL_MAT = { pendiente:'Pendiente', aprobada:'Aprobada', entregada:'Entregada', cancelada:'Cancelada' };
+const _LABEL_TCK = { pendiente:'Pendiente', en_proceso:'En Proceso', finalizado:'Finalizado', cancelado:'Cancelado' };
+const _OPCIONES_MAT = ['pendiente','aprobada','entregada','cancelada'];
+const _OPCIONES_TCK = ['pendiente','en_proceso','finalizado','cancelado'];
+
+let _popoverEl = null;
+
+function abrirPopoverEstado(event, id, estadoActual, url, tipo) {
+    event.stopPropagation();
+    cerrarPopover();
+
+    // Estados terminales — no permiten cambio
+    const terminalesMat = ['entregada', 'cancelada'];
+    const terminalesTck = ['finalizado', 'cancelado'];
+    const terminales = tipo === 'mat' ? terminalesMat : terminalesTck;
+    if (terminales.includes(estadoActual)) return;
+
+    const opciones = tipo === 'mat' ? _OPCIONES_MAT : _OPCIONES_TCK;
+    const badges   = tipo === 'mat' ? _BADGE_MAT    : _BADGE_TCK;
+    const labels   = tipo === 'mat' ? _LABEL_MAT    : _LABEL_TCK;
+
+    const div = document.createElement('div');
+    div.id = '_status_popover';
+    div.className = 'fixed z-[9999] bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 min-w-[10rem]';
+    div.style.cssText = 'box-shadow:0 8px 24px rgba(0,0,0,.14)';
+
+    opciones.filter(o => o !== estadoActual).forEach(opt => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full px-3 py-1.5 text-left text-xs font-medium hover:bg-gray-50 transition flex items-center gap-2';
+        const extraBorder = tipo === 'tck' ? ' border' : '';
+        btn.innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold${extraBorder} ${badges[opt]}">${labels[opt]}</span>`;
+        btn.addEventListener('click', () => {
+            cerrarPopover();
+            _cambiarEstado(id, opt, url, tipo);
+        });
+        div.appendChild(btn);
     });
-});
+
+    document.body.appendChild(div);
+    _popoverEl = div;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuH = div.children.length * 36 + 12;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    div.style.left = Math.min(rect.left, window.innerWidth - 176) + 'px';
+    div.style.top  = (spaceBelow > menuH + 8 ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - menuH - 4) + 'px';
+
+    setTimeout(() => document.addEventListener('click', _cerrarPopoverFuera), 10);
+}
+
+function _cerrarPopoverFuera(e) {
+    if (_popoverEl && !_popoverEl.contains(e.target)) cerrarPopover();
+}
+function cerrarPopover() {
+    if (_popoverEl) { _popoverEl.remove(); _popoverEl = null; }
+    document.removeEventListener('click', _cerrarPopoverFuera);
+}
+
+async function _cambiarEstado(id, nuevoEstado, url, tipo) {
+    const btns = document.querySelectorAll(`[data-status-id="${id}"][data-tipo="${tipo}"]`);
+    btns.forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
+
+    const field = tipo === 'mat' ? 'estado' : 'status';
+    try {
+        const res = await fetch(url, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_C, 'Accept': 'application/json' },
+            body: JSON.stringify({ [field]: nuevoEstado })
+        });
+        if (!res.ok) throw new Error('Error');
+
+        const badges   = tipo === 'mat' ? _BADGE_MAT    : _BADGE_TCK;
+        const labels   = tipo === 'mat' ? _LABEL_MAT    : _LABEL_TCK;
+        const allBadges = tipo === 'mat' ? Object.values(_BADGE_MAT) : Object.values(_BADGE_TCK);
+        const extraBorder = tipo === 'tck' ? ' border' : '';
+        const newUrl = url; // url is already bound in closure
+
+        btns.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '';
+            // Remove all old color classes
+            allBadges.forEach(cls => cls.split(' ').forEach(c => btn.classList.remove(c)));
+            // Add new color classes
+            badges[nuevoEstado]?.split(' ').forEach(c => btn.classList.add(c));
+            // Update label + chevron, re-bind onclick
+            btn.innerHTML = `${labels[nuevoEstado] || nuevoEstado}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>`;
+            btn.onclick = (ev) => abrirPopoverEstado(ev, id, nuevoEstado, newUrl, tipo);
+        });
+    } catch(e) {
+        btns.forEach(b => { b.disabled = false; b.style.opacity = ''; });
+        alert('No se pudo actualizar el estado.');
+    }
+}
 </script>
 
 {{-- ══════════════════════════════════════
@@ -861,7 +960,7 @@ document.querySelectorAll('.estado-select-mat').forEach(sel => {
             </button>
         </div>
 
-        <form method="POST" action="{{ route('solicitudes.store') }}" id="formSolicitarPieza" class="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+        <form method="POST" action="{{ route('solicitudes.nueva') }}" id="formSolicitarPieza" class="overflow-y-auto flex-1 px-6 py-5 space-y-4">
             @csrf
             <input type="hidden" name="producto_id" id="sp_producto_id">
             <input type="hidden" name="unidad_medida_id" id="sp_unidad_id">

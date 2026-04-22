@@ -94,6 +94,11 @@ class SolicitudesController extends Controller
             return response()->json(['ok' => true, 'estado' => $nuevo]);
         }
 
+        // Bloquear cambios desde estados terminales
+        if (in_array($anterior, ['entregada', 'cancelada'])) {
+            return response()->json(['ok' => false, 'error' => 'No se puede cambiar el estado de una solicitud ' . $anterior . '.'], 422);
+        }
+
         $solicitud->estado = $nuevo;
         $solicitud->save();
 

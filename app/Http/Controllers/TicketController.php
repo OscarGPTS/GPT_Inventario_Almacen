@@ -311,6 +311,44 @@ class TicketController extends Controller
     }
 
     /**
+     * Cambiar estado de un ticket (AJAX inline desde el concentrado).
+     * PATCH /tickets/{ticket}/cambiar-status
+     */
+    public function updateStatus(Request $request, Ticket $ticket)
+    {
+        if (!Auth::user()->hasRole(['admin', 'admin_almacen'])) {
+            abort(403);
+        }
+
+        $request->validate([
+            'status' => 'required|in:pendiente,en_proceso,finalizado,cancelado',
+        ]);
+
+        $nuevo    = $request->status;
+        $anterior = $ticket->status;
+
+        if ($nuevo === $anterior) {
+            return response()->json(['ok' => true, 'status' => $nuevo]);
+        }
+
+        // Bloquear cambios desde estados terminales
+        if (in_array($anterior, ['finalizado', 'cancelado'])) {
+            return response()->json(['ok' => false, 'error' => 'No se puede cambiar el estado de un ticket ' . $anterior . '.'], 422);
+        }
+
+        if ($nuevo === 'finalizado') {
+            $ticket->complete('Marcado como finalizado desde panel administrativo');
+        } elseif ($nuevo === 'cancelado') {
+            $ticket->cancel('Cancelado desde panel administrativo');
+        } else {
+            $ticket->status = $nuevo;
+            $ticket->save();
+        }
+
+        return response()->json(['ok' => true, 'status' => $nuevo]);
+    }
+
+    /**
      * Cancelar ticket
      */
     public function cancel(Request $request, Ticket $ticket)
