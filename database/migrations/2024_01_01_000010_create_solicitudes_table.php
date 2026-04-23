@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::create('solicitudes', function (Blueprint $table) {
             $table->id();
-            $table->string('folio', 50)->unique();
+            $table->string('folio', 50)->nullable();
             $table->date('fecha');
             $table->string('solicitante', 100);
-            $table->foreignId('departamento_id')->constrained('departamentos');
+            $table->foreignId('departamento_id')->nullable()->constrained('departamentos');
             $table->foreignId('producto_id')->constrained('productos');
             $table->integer('cantidad');
             $table->foreignId('unidad_medida_id')->constrained('unidades_medida');

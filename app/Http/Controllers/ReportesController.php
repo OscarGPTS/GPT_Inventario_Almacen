@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use App\Models\Solicitud;
+use App\Models\NoConformidad;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Log;
 
 class ReportesController extends Controller
@@ -16,8 +18,10 @@ class ReportesController extends Controller
     public function entradas(Request $request)
     {
         $query = Producto::with(['componente', 'categoria', 'familia', 'unidadMedida', 'ubicacion'])
-            ->orderBy('codigo');
+            ->where('cantidad_fisica', '>', 0)
+            ->orderByDesc('created_at');
 
+        // Búsqueda de texto general
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
@@ -29,16 +33,61 @@ class ReportesController extends Controller
             });
         }
 
+        // Filtros por catálogo
+        if ($request->filled('componente_id')) {
+            $query->where('componente_id', $request->componente_id);
+        }
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', $request->categoria_id);
+        }
+        if ($request->filled('familia_id')) {
+            $query->where('familia_id', $request->familia_id);
+        }
+        if ($request->filled('unidad_medida_id')) {
+            $query->where('unidad_medida_id', $request->unidad_medida_id);
+        }
+        if ($request->filled('ubicacion_id')) {
+            $query->where('ubicacion_id', $request->ubicacion_id);
+        }
+
         $registros = $query->paginate(50)->withQueryString();
-        
-        // Catálogos para el formulario de nuevo producto
-        $componentes = \App\Models\Componente::orderBy('codigo')->get();
-        $categorias = \App\Models\Categoria::orderBy('codigo')->get();
-        $familias = \App\Models\Familia::orderBy('codigo')->get();
+
+        // Catálogos para filtros y formulario de nuevo producto
+        $componentes   = \App\Models\Componente::orderBy('codigo')->get();
+        $categorias    = \App\Models\Categoria::orderBy('codigo')->get();
+        $familias      = \App\Models\Familia::orderBy('codigo')->get();
         $unidadesMedida = \App\Models\UnidadMedida::orderBy('codigo')->get();
-        $ubicaciones = \App\Models\Ubicacion::orderBy('codigo')->get();
-        
+        $ubicaciones   = \App\Models\Ubicacion::orderBy('codigo')->get();
+
         return view('reportes.entradas', compact('registros', 'componentes', 'categorias', 'familias', 'unidadesMedida', 'ubicaciones'));
+    }
+
+    /**
+     * Devuelve el próximo consecutivo y código dado componente+categoría+familia
+     */
+    public function proximoConsecutivo(Request $request)
+    {
+        $comp = \App\Models\Componente::find($request->input('componente_id'));
+        $cat  = \App\Models\Categoria::find($request->input('categoria_id'));
+        $fam  = \App\Models\Familia::find($request->input('familia_id'));
+
+        if (!$comp || !$cat || !$fam) {
+            return response()->json(['error' => 'Parámetros incompletos'], 422);
+        }
+
+        $prefix = $comp->codigo . $cat->codigo . $fam->codigo;
+
+        $maxCons = Producto::where('codigo', 'like', $prefix . '%')
+            ->selectRaw('MAX(CAST(consecutivo AS UNSIGNED)) as max_cons')
+            ->value('max_cons');
+
+        $siguiente = str_pad((int)($maxCons ?? 0) + 1, 4, '0', STR_PAD_LEFT);
+
+        return response()->json([
+            'prefix'    => $prefix,
+            'siguiente' => $siguiente,
+            'codigo'    => $prefix . $siguiente,
+        ]);
     }
 
     /**
@@ -84,6 +133,89 @@ class ReportesController extends Controller
     }
 
     /**
+     * Guardar nuevo producto desde el formulario de Barras
+     */
+    public function guardarProductoBarra(Request $request)
+    {
+        $request->validate([
+            'codigo' => 'required|string|max:50|unique:productos,codigo',
+            'descripcion' => 'required|string',
+            'componente_id' => 'nullable|exists:componentes,id',
+            'categoria_id' => 'nullable|exists:categorias,id',
+            'familia_id' => 'nullable|exists:familias,id',
+            'unidad_medida_id' => 'nullable|exists:unidades_medida,id',
+            'ubicacion_id' => 'nullable|exists:ubicaciones,id',
+            'numero_requisicion' => 'nullable|string|max:50',
+            'numero_parte' => 'nullable|string|max:100',
+            'dimensiones' => 'nullable|string|max:100',
+            'cantidad_entrada' => 'nullable|numeric|min:0',
+            'cantidad_fisica' => 'nullable|numeric|min:0',
+            'factura' => 'nullable|string|max:50',
+            'orden_compra' => 'nullable|string|max:50',
+            'observaciones' => 'nullable|string',
+        ]);
+
+        try {
+            // Obtener valores por defecto
+            $componenteDefault = \App\Models\Componente::firstOrCreate(
+                ['codigo' => 'X'],
+                ['nombre' => 'Sin Componente', 'descripcion' => 'Componente por defecto']
+            );
+            
+            $categoriaBarras = \App\Models\Categoria::where('codigo', 'BR')->first();
+            if (!$categoriaBarras) {
+                $categoriaBarras = \App\Models\Categoria::firstOrCreate(
+                    ['codigo' => 'BR'],
+                    ['descripcion' => 'Barras']
+                );
+            }
+            
+            $familiaDefault = \App\Models\Familia::firstOrCreate(
+                ['codigo' => '000'],
+                ['descripcion' => 'Familia por defecto']
+            );
+            
+            $unidadMedidaDefault = \App\Models\UnidadMedida::firstOrCreate(
+                ['codigo' => 'PZA'],
+                ['nombre' => 'PIEZA', 'descripcion' => 'Unidad por defecto']
+            );
+
+            // Preparar datos usando valores por defecto cuando sea necesario
+            $codigo = $request->codigo;
+            $consecutivo = strlen($codigo) >= 10 ? substr($codigo, -4) : '0001';
+
+            $data = [
+                'codigo' => $codigo,
+                'descripcion' => $request->descripcion,
+                'componente_id' => $request->componente_id ?? $componenteDefault->id,
+                'categoria_id' => $request->categoria_id ?? $categoriaBarras->id,
+                'familia_id' => $request->familia_id ?? $familiaDefault->id,
+                'consecutivo' => $consecutivo,
+                'unidad_medida_id' => $request->unidad_medida_id ?? $unidadMedidaDefault->id,
+                'ubicacion_id' => $request->ubicacion_id,
+                'numero_requisicion' => $request->numero_requisicion,
+                'numero_parte' => $request->numero_parte,
+                'dimensiones' => $request->dimensiones,
+                'cantidad_entrada' => $request->cantidad_entrada ?? 0,
+                'cantidad_fisica' => $request->cantidad_fisica ?? 0,
+                'cantidad_salida' => 0,
+                'factura' => $request->factura,
+                'orden_compra' => $request->orden_compra,
+                'observaciones' => $request->observaciones,
+                'moneda' => 'MXN',
+            ];
+
+            $producto = Producto::create($data);
+            
+            return redirect()->route('reportes.barras')
+                ->with('success', "Producto {$producto->codigo} creado exitosamente en categoría Barras");
+        } catch (\Exception $e) {
+            return redirect()->route('reportes.barras')
+                ->with('error', 'Error al crear el producto: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Concentrado de Requisiciones del Centro de Operaciones
      */
     public function requisiciones(Request $request)
@@ -108,6 +240,11 @@ class ReportesController extends Controller
 
         if ($request->filled('prioridad')) {
             $query->where('prioridad', $request->prioridad);
+        }
+
+        // Visitante solo ve sus propias solicitudes
+        if (auth()->user()->hasRole('visitante')) {
+            $query->where('usuario_registro_id', auth()->id());
         }
 
         $registros = $query->paginate(50)->withQueryString();
@@ -170,19 +307,24 @@ class ReportesController extends Controller
      */
     public function noConforme(Request $request)
     {
-        $query = Producto::with(['componente', 'categoria', 'familia', 'unidadMedida', 'ubicacion'])
-            ->where('no_conforme', true)
-            ->orderBy('fecha_nc', 'desc')
-            ->orderBy('codigo');
+        $query = NoConformidad::with(['producto.componente', 'producto.categoria', 'producto.familia', 'producto.unidadMedida', 'producto.ubicacion', 'registrador', 'resolutor'])
+            ->orderByDesc('created_at');
 
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
-                $q->where('codigo', 'like', "%{$s}%")
-                  ->orWhere('descripcion', 'like', "%{$s}%")
-                  ->orWhere('observacion_nc', 'like', "%{$s}%")
-                  ->orWhere('factura', 'like', "%{$s}%");
+                $q->where('descripcion', 'like', "%{$s}%")
+                  ->orWhere('resolucion', 'like', "%{$s}%")
+                  ->orWhere('estatus', 'like', "%{$s}%")
+                  ->orWhereHas('producto', function ($pq) use ($s) {
+                      $pq->where('codigo', 'like', "%{$s}%")
+                         ->orWhere('descripcion', 'like', "%{$s}%");
+                  });
             });
+        }
+
+        if ($request->filled('estatus')) {
+            $query->where('estatus', $request->estatus);
         }
 
         $registros = $query->paginate(50)->withQueryString();
@@ -1145,7 +1287,7 @@ class ReportesController extends Controller
                             continue;
                         } else {
                             // Modo: update_create o only_new -> Crear
-                            \App\Models\Producto::create([
+                            $productoCreado = \App\Models\Producto::create([
                                 'codigo' => $codigo,
                                 'componente_id' => $componenteId,
                                 'categoria_id' => $categoriaId,
@@ -1166,6 +1308,19 @@ class ReportesController extends Controller
                                 'fecha_vencimiento' => $fechaVencimiento,
                                 'hoja_seguridad' => $hojaSeguridad,
                             ]);
+                            if ($cantidadEntrada > 0) {
+                                \App\Models\Movimiento::create([
+                                    'producto_id'      => $productoCreado->id,
+                                    'usuario_id'       => auth()->id(),
+                                    'tipo_movimiento'  => 'entrada',
+                                    'cantidad'         => $cantidadEntrada,
+                                    'cantidad_anterior'=> 0,
+                                    'cantidad_nueva'   => $cantidadFisica,
+                                    'descripcion'      => "Importación Excel: {$descripcion}",
+                                    'referencia'       => $archivo->getClientOriginalName(),
+                                    'fuente'           => 'excel',
+                                ]);
+                            }
                             $creados++;
                             $procesados++;
                             Log::info("Fila " . ($i + 1) . ": Producto '{$codigo}' creado");
@@ -1251,5 +1406,56 @@ class ReportesController extends Controller
             Log::warning("No se pudo parsear fecha texto: {$valor}");
             return null;
         }
+    }
+
+    /**
+     * Actualizar un producto existente desde la vista Inventario
+     */
+    public function actualizarProducto(Request $request, Producto $producto)
+    {
+        $user = auth()->user();
+        if (!$user->hasRole(['admin', 'admin_almacen', 'almacenista'])) {
+            abort(403);
+        }
+
+        $request->validate([
+            'descripcion'        => 'required|string',
+            'componente_id'      => 'required|exists:componentes,id',
+            'categoria_id'       => 'required|exists:categorias,id',
+            'familia_id'         => 'required|exists:familias,id',
+            'unidad_medida_id'   => 'required|exists:unidades_medida,id',
+            'ubicacion_id'       => 'nullable|exists:ubicaciones,id',
+            'dimensiones'        => 'nullable|string|max:100',
+            'cantidad_entrada'   => 'nullable|numeric|min:0',
+            'cantidad_salida'    => 'nullable|numeric|min:0',
+            'cantidad_fisica'    => 'nullable|numeric|min:0',
+            'fecha_entrada'      => 'nullable|date',
+            'fecha_salida'       => 'nullable|date',
+            'fecha_vencimiento'  => 'nullable|date',
+            'precio_unitario'    => 'nullable|numeric|min:0',
+            'moneda'             => 'nullable|in:MXN,USD',
+            'factura'            => 'nullable|string|max:50',
+            'orden_compra'       => 'nullable|string|max:50',
+            'numero_requisicion' => 'nullable|string|max:50',
+            'numero_parte'       => 'nullable|string|max:100',
+            'hoja_seguridad'     => 'nullable|string|max:255',
+            'observaciones'      => 'nullable|string',
+        ]);
+
+        $old = $producto->toArray();
+
+        $producto->update($request->only([
+            'descripcion', 'componente_id', 'categoria_id', 'familia_id',
+            'unidad_medida_id', 'ubicacion_id', 'dimensiones',
+            'cantidad_entrada', 'cantidad_salida', 'cantidad_fisica',
+            'fecha_entrada', 'fecha_salida', 'fecha_vencimiento',
+            'precio_unitario', 'moneda', 'factura', 'orden_compra',
+            'numero_requisicion', 'numero_parte', 'hoja_seguridad', 'observaciones',
+        ]));
+
+        AuditLog::registrar('updated', 'productos', $producto->id, $old, $producto->fresh()->toArray());
+
+        return redirect()->route('reportes.entradas')
+            ->with('success', "Producto {$producto->codigo} actualizado correctamente.");
     }
 }

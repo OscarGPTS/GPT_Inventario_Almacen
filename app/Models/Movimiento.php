@@ -14,8 +14,10 @@ class Movimiento extends Model
         'cantidad_anterior',
         'cantidad_nueva',
         'solicitud_id',
+        'ticket_id',
         'descripcion',
         'referencia',
+        'fuente',
     ];
 
     protected $table = 'movimientos';
@@ -33,6 +35,11 @@ class Movimiento extends Model
     public function solicitud()
     {
         return $this->belongsTo(Solicitud::class);
+    }
+
+    public function ticket()
+    {
+        return $this->belongsTo(\App\Models\Ticket::class);
     }
 
     // Event para registrar automáticamente

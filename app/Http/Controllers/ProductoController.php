@@ -164,6 +164,7 @@ class ProductoController extends Controller
                 'cantidad_nueva' => $producto->cantidad_entrada,
                 'descripcion' => 'Entrada inicial de producto - Barras',
                 'referencia' => $request->factura ?? $request->orden_compra,
+                'fuente' => 'barras',
             ]);
         }
 
@@ -411,6 +412,7 @@ class ProductoController extends Controller
                             'cantidad_nueva' => $cantidadEntrada,
                             'referencia' => 'Importación JSON',
                             'descripcion' => 'Importado desde archivo JSON',
+                            'fuente' => 'json',
                         ]);
                     }
 

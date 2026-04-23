@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NuevaSolicitudMail;
+use App\Notifications\NuevaSolicitudNotification;
 use App\Models\Departamento;
 use App\Models\Producto;
 use App\Models\Solicitud;
 use App\Models\UnidadMedida;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class SolicitudesController extends Controller
 {
@@ -28,8 +33,10 @@ class SolicitudesController extends Controller
             'unidad_medida_id'   => 'nullable|integer|exists:unidades_medida,id',
             'observaciones'      => 'nullable|string',
             'estado'             => 'required|in:pendiente,aprobada,entregada,cancelada',
-            'prioridad'          => 'required|in:urgente,alta,normal,baja',
         ]);
+
+        // Calcular prioridad automáticamente según los días restantes hasta la fecha requerida
+        $data['prioridad'] = self::calcularPrioridad($data['fecha_requerida'] ?? null);
 
         // Resolver departamento: usar ID existente o crear uno nuevo por nombre
         if (empty($data['departamento_id']) && !empty($data['departamento_nombre'])) {
@@ -48,16 +55,32 @@ class SolicitudesController extends Controller
         // Eliminar campo auxiliar que no es columna de BD
         unset($data['departamento_nombre']);
 
-        Solicitud::create($data);
+        $solicitud = Solicitud::create($data);
+
+        // Notificar a almacenistas/admins sobre la nueva solicitud
+        try {
+            $solicitud->load(['producto', 'unidadMedida', 'departamento', 'usuarioRegistro']);
+            $destinatarios = User::whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'admin_almacen', 'almacenista']))
+                ->whereNotNull('email')
+                ->get();
+            $emails = $destinatarios->pluck('email')->filter()->values()->toArray();
+            if (!empty($emails)) {
+                Mail::to($emails)->send(new NuevaSolicitudMail($solicitud));
+            }
+            Notification::send($destinatarios, new NuevaSolicitudNotification($solicitud));
+        } catch (\Exception $e) {
+            // El fallo del correo no debe interrumpir el flujo
+            \Log::error('Error enviando correo de nueva solicitud: ' . $e->getMessage());
+        }
 
         return redirect()
-            ->route('reportes.requisiciones')
+            ->route('solicitudes.concentrado', ['tab' => 'material'])
             ->with('success', 'Solicitud registrada correctamente.');
     }
 
     /**
-     * Cambiar estado de una solicitud.
-     * PATCH /solicitudes/{id}/estado
+     * Cambiar estado de una solicitud (AJAX inline).
+     * PATCH /solicitudes/{id}/cambiar-estado
      */
     public function updateEstado(Request $request, Solicitud $solicitud)
     {
@@ -65,12 +88,82 @@ class SolicitudesController extends Controller
             'estado' => 'required|in:pendiente,aprobada,entregada,cancelada',
         ]);
 
-        $solicitud->update(['estado' => $request->estado]);
+        $nuevo    = $request->estado;
+        $anterior = $solicitud->estado;
+
+        if ($nuevo === $anterior) {
+            return response()->json(['ok' => true, 'estado' => $nuevo]);
+        }
+
+        // Bloquear cambios desde estados terminales
+        if (in_array($anterior, ['entregada', 'cancelada'])) {
+            return response()->json(['ok' => false, 'error' => 'No se puede cambiar el estado de una solicitud ' . $anterior . '.'], 422);
+        }
+
+        $solicitud->estado = $nuevo;
+        $solicitud->save();
+
+        // ── Ajustar inventario según la transición ──────────────────────────
+        $producto = $solicitud->producto;
+        $cantidad = (float) $solicitud->cantidad;
+
+        if ($producto && $cantidad > 0) {
+            // Reservar al aprobar
+            if ($nuevo === 'aprobada' && $anterior !== 'aprobada') {
+                $producto->cantidad_apartada = max(0, (float)$producto->cantidad_apartada + $cantidad);
+                $producto->save();
+            }
+
+            // Liberar reserva al cancelar o regresar a pendiente desde aprobada
+            if (in_array($nuevo, ['cancelada', 'pendiente']) && $anterior === 'aprobada') {
+                $producto->cantidad_apartada = max(0, (float)$producto->cantidad_apartada - $cantidad);
+                $producto->save();
+            }
+
+            // Entregar: descontar stock y liberar reserva
+            if ($nuevo === 'entregada' && $anterior !== 'entregada') {
+                $cantidadAnterior = (float) $producto->cantidad_fisica;
+                $producto->cantidad_salida  = (float)$producto->cantidad_salida  + $cantidad;
+                $producto->cantidad_fisica  = max(0, $cantidadAnterior - $cantidad);
+                $producto->fecha_salida     = now();
+                // Si estaba aprobada, liberar lo que estaba apartado
+                if ($anterior === 'aprobada') {
+                    $producto->cantidad_apartada = max(0, (float)$producto->cantidad_apartada - $cantidad);
+                }
+                $producto->save();
+
+                \App\Models\Movimiento::create([
+                    'producto_id'      => $producto->id,
+                    'usuario_id'       => auth()->id(),
+                    'tipo_movimiento'  => 'salida',
+                    'cantidad'         => $cantidad,
+                    'cantidad_anterior'=> $cantidadAnterior,
+                    'cantidad_nueva'   => $producto->cantidad_fisica,
+                    'solicitud_id'     => $solicitud->id,
+                    'descripcion'      => "Salida por solicitud {$solicitud->folio} - {$solicitud->solicitante}",
+                    'referencia'       => $solicitud->folio,
+                    'fuente'           => 'solicitud_material',
+                ]);
+            }
+        }
 
         if ($request->expectsJson()) {
-            return response()->json(['ok' => true, 'estado' => $solicitud->estado]);
+            return response()->json(['ok' => true, 'estado' => $nuevo]);
         }
 
         return back()->with('success', 'Estado actualizado.');
+    }
+
+    private static function calcularPrioridad(?string $fechaRequerida): string
+    {
+        if (!$fechaRequerida) return 'normal';
+        $dias = now()->startOfDay()->diffInDays(
+            \Carbon\Carbon::parse($fechaRequerida)->startOfDay(),
+            false
+        );
+        if ($dias <= 2)  return 'urgente';
+        if ($dias <= 7)  return 'alta';
+        if ($dias <= 14) return 'normal';
+        return 'baja';
     }
 }

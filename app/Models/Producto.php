@@ -24,6 +24,7 @@ class Producto extends Model
         'cantidad_entrada',
         'cantidad_salida',
         'cantidad_fisica',
+        'cantidad_apartada',
         'fecha_entrada',
         'fecha_salida',
         'precio_unitario',
@@ -44,6 +45,7 @@ class Producto extends Model
         'fecha_vencimiento'=> 'date',
         'fecha_nc'         => 'date',
         'precio_unitario'  => 'decimal:2',
+        'cantidad_apartada'=> 'decimal:2',
         'no_conforme'      => 'boolean',
     ];
 
@@ -80,6 +82,11 @@ class Producto extends Model
     public function solicitudes()
     {
         return $this->hasMany(Solicitud::class);
+    }
+
+    public function noConformidades()
+    {
+        return $this->hasMany(NoConformidad::class);
     }
 
     // Generar código automáticamente
