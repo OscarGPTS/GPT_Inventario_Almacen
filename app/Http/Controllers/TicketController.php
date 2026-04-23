@@ -221,11 +221,12 @@ class TicketController extends Controller
                 ] : null,
             ],
             'permissions' => [
-                'esDueno'       => $esDueno,
-                'esGestor'      => $esGestor,
-                'esAlmacenista' => $esAlmacenista,
-                'canDelete'     => $esDueno && $ticket->isPendiente(),
-                'canCancel'     => ($esDueno || $esGestor) && $ticket->canBeCancelled(),
+                'esDueno'            => $esDueno,
+                'esGestor'           => $esGestor,
+                'esAlmacenista'      => $esAlmacenista,
+                'canDelete'          => $esDueno && $ticket->isPendiente(),
+                'canCancel'          => ($esDueno || $esGestor) && $ticket->canBeCancelled(),
+                'canUpdateProducto'  => $esGestor && !in_array($ticket->status, ['finalizado', 'cancelado']),
             ],
             'almacenUsers' => $almacenUsers,
             'urls' => [
@@ -234,8 +235,9 @@ class TicketController extends Controller
                 'cancel'   => route('tickets.cancel',   $ticket),
                 'survey'   => route('tickets.survey',   $ticket),
                 'destroy'  => route('tickets.destroy',  $ticket),
-                'show'     => route('tickets.show',     $ticket),
-                'producto' => $ticket->producto
+                'show'           => route('tickets.show',     $ticket),
+                'update_producto' => route('tickets.updateProducto', $ticket),
+                'producto'       => $ticket->producto
                     ? route('productos.show', $ticket->producto_id) : null,
             ],
         ]);
@@ -499,6 +501,34 @@ class TicketController extends Controller
     }
 
     /**
+     * Actualizar (o agregar) el producto de un ticket
+     */
+    public function updateProducto(Request $request, Ticket $ticket)
+    {
+        $user     = Auth::user();
+        $esGestor = $user->hasRole(['admin', 'admin_almacen']);
+
+        if (!$esGestor) abort(403);
+
+        if (in_array($ticket->status, ['finalizado', 'cancelado'])) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'error' => 'No se puede modificar un ticket en estado terminal.'], 422);
+            }
+            return back()->with('error', 'No se puede modificar un ticket en estado terminal.');
+        }
+
+        $request->validate(['producto_id' => 'nullable|exists:productos,id']);
+
+        $ticket->producto_id = $request->filled('producto_id') ? $request->producto_id : null;
+        $ticket->save();
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Producto actualizado correctamente.']);
+        }
+        return back()->with('success', 'Producto actualizado.');
+    }
+
+    /**
      * Vista unificada: Requisiciones de Material + Solicitudes de Movimiento
      */
     public function concentrado(Request $request)
@@ -554,7 +584,7 @@ class TicketController extends Controller
         if ($tab === 'material') {
             $solicitudes = $buildSolQ()->paginate(20)->appends($request->except('page'));
         } else {
-            $recentSol = $buildSolQ()->limit(10)->get();
+            $recentSol = $buildSolQ()->paginate(10, ['*'], 'page_sol')->appends($request->except('page_sol'));
         }
 
         // ── Tickets de Movimiento ────────────────────────────────────────────
@@ -581,7 +611,7 @@ class TicketController extends Controller
         if ($tab === 'movimiento') {
             $tickets = $buildTckQ()->paginate(20)->appends($request->except('page'));
         } else {
-            $recentTck = $buildTckQ()->limit(10)->get();
+            $recentTck = $buildTckQ()->paginate(10, ['*'], 'page_tck')->appends($request->except('page_tck'));
         }
 
         // ── Catálogos para modal nueva requisición ───────────────────────────

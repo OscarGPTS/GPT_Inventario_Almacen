@@ -109,6 +109,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets/{ticket}/completar', [TicketController::class, 'complete'])->name('tickets.complete');
     Route::post('/tickets/{ticket}/cancelar', [TicketController::class, 'cancel'])->name('tickets.cancel');
     Route::patch('/tickets/{ticket}/cambiar-status', [TicketController::class, 'updateStatus'])->name('tickets.cambiarStatus');
+    Route::post('/tickets/{ticket}/update-producto', [TicketController::class, 'updateProducto'])->name('tickets.updateProducto');
     Route::post('/tickets/{ticket}/encuesta', [TicketController::class, 'survey'])->name('tickets.survey');
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 

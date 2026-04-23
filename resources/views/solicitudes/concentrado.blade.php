@@ -216,7 +216,7 @@
             <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full bg-teal-500"></div>
                 <span class="font-semibold text-sm text-gray-700">Requisiciones de Material</span>
-                <span class="text-xs text-gray-400">(últimas {{ $recentSol->count() }})</span>
+                <span class="text-xs text-gray-400">({{ $recentSol->total() }} total)</span>
             </div>
             <a href="{{ $tabUrl('material') }}" class="text-xs font-medium hover:underline" style="color:{{ $acento }}">Ver todas &rarr;</a>
         </div>
@@ -283,15 +283,18 @@
                 </tbody>
             </table>
         </div>
+        @if($recentSol->hasPages())
+        <div class="px-4 py-3 border-t border-gray-100">
+            {{ $recentSol->links() }}
+        </div>
+        @endif
     </div>
-
-    {{-- Tickets de Movimiento recientes --}}
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full" style="background-color:{{ $acento }}"></div>
                 <span class="font-semibold text-sm text-gray-700">Solicitudes de Movimiento</span>
-                <span class="text-xs text-gray-400">(últimas {{ $recentTck->count() }})</span>
+                <span class="text-xs text-gray-400">({{ $recentTck->total() }} total)</span>
             </div>
             <a href="{{ $tabUrl('movimiento') }}" class="text-xs font-medium hover:underline" style="color:{{ $acento }}">Ver todas &rarr;</a>
         </div>
@@ -342,6 +345,11 @@
                 </tbody>
             </table>
         </div>
+        @if($recentTck->hasPages())
+        <div class="px-4 py-3 border-t border-gray-100">
+            {{ $recentTck->links() }}
+        </div>
+        @endif
     </div>
     @endif
 
@@ -1084,6 +1092,20 @@ function _renderModalTicket(data) {
 
     // Actions section
     const actionsBox = document.getElementById('mtckd_actions');
+
+    // Optional product add/update box
+    const addProdBox = document.getElementById('mtckd_add_producto_box');
+    if (!ticket.producto && permissions.canUpdateProducto) {
+        addProdBox.classList.remove('hidden');
+        addProdBox.dataset.url = urls.update_producto;
+        document.getElementById('mtckd_prod_search').value = '';
+        document.getElementById('mtckd_prod_search').classList.remove('hidden');
+        document.getElementById('mtckd_prod_id').value = '';
+        document.getElementById('mtckd_prod_selected').classList.add('hidden');
+        document.getElementById('mtckd_prod_results').classList.add('hidden');
+    } else {
+        addProdBox.classList.add('hidden');
+    }
     if ((permissions.esGestor || permissions.esAlmacenista) && !isTerminal) {
         actionsBox.classList.remove('hidden');
         // Assign
@@ -1172,6 +1194,35 @@ function _mtckShowSuccess(msg) {
     el.classList.remove('hidden');
     if (window._mtckSuccessTimer) clearTimeout(window._mtckSuccessTimer);
     window._mtckSuccessTimer = setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+
+function mtckLimpiarProd() {
+    document.getElementById('mtckd_prod_id').value = '';
+    document.getElementById('mtckd_prod_selected').classList.add('hidden');
+    document.getElementById('mtckd_prod_search').value = '';
+    document.getElementById('mtckd_prod_search').classList.remove('hidden');
+    document.getElementById('mtckd_prod_results').classList.add('hidden');
+}
+
+async function mtckGuardarProducto() {
+    const btn      = document.getElementById('mtckd_btn_save_prod');
+    const url      = document.getElementById('mtckd_add_producto_box').dataset.url;
+    const productoId = document.getElementById('mtckd_prod_id').value;
+    const errEl    = document.getElementById('mtckd_error_action');
+    if (!productoId) { errEl.textContent = 'Selecciona un producto primero'; errEl.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'Guardando\u2026';
+    errEl.classList.add('hidden');
+    const body = new FormData();
+    body.append('_token', CSRF_C);
+    body.append('producto_id', productoId);
+    try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_C }, body });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || json.error || 'Error al guardar');
+        await _cargarModalTicket(_tckModalId);
+        _mtckShowSuccess('\u2713 Producto asignado correctamente.');
+    } catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Guardar producto'; }
 }
 
 function mtckSetRating(val) {
@@ -1461,6 +1512,45 @@ function _actualizarFilaTicket(id) {
                     <div><span class="text-gray-500 text-xs font-medium">Asignado a:</span><br><span id="mtckd_asignado" class="text-gray-700"></span></div>
                     <div><span class="text-gray-500 text-xs font-medium">Completado el:</span><br><span id="mtckd_completado" class="text-gray-700"></span></div>
                 </div>
+            </div>
+
+            {{-- Optional product (shown when ticket has no product and user can update it) --}}
+            <div id="mtckd_add_producto_box" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <p class="text-sm font-semibold text-amber-700">Sin producto especificado &mdash; &iquest;deseas agregar uno?</p>
+                </div>
+                <div class="relative">
+                    <input type="text" id="mtckd_prod_search" autocomplete="off"
+                        placeholder="Buscar por c&oacute;digo o descripci&oacute;n..."
+                        class="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
+                    <svg class="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <svg id="mtckd_prod_spinner" class="animate-spin absolute right-2.5 top-2.5 w-4 h-4 hidden text-amber-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <div id="mtckd_prod_results" class="mt-1 bg-white border border-gray-200 rounded-xl shadow-lg w-full max-h-52 overflow-y-auto hidden"></div>
+                </div>
+                <div id="mtckd_prod_selected" class="hidden flex items-center gap-2 px-3 py-2 bg-white border border-amber-300 rounded-lg text-sm">
+                    <svg class="w-4 h-4 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span id="mtckd_prod_selected_text" class="flex-1 text-amber-900 font-medium"></span>
+                    <button type="button" onclick="mtckLimpiarProd()" class="text-amber-400 hover:text-red-500 transition text-xs">&times; Quitar</button>
+                </div>
+                <input type="hidden" id="mtckd_prod_id" value="">
+                <button type="button" id="mtckd_btn_save_prod" onclick="mtckGuardarProducto()"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg transition hover:opacity-90"
+                    style="background-color:#4A568D;">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Guardar producto
+                </button>
             </div>
 
             {{-- Description --}}
@@ -1799,29 +1889,44 @@ function _actualizarFilaTicket(id) {
 
             {{-- Búsqueda de producto --}}
             <div class="relative">
-                <label class="block text-xs font-semibold text-gray-600 mb-1">
-                    Producto <span class="text-red-500">*</span>
-                </label>
-                <div class="relative">
-                    <input type="text" id="mpc_buscar_prod" autocomplete="off"
-                           placeholder="Buscar por código o descripción..."
-                           class="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 transition" style="--tw-ring-color:#4A568D;">
-                    <svg class="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <svg id="mpc_spinner" class="animate-spin absolute right-2.5 top-2.5 w-4 h-4 hidden" style="color:#4A568D" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-gray-600">
+                        Producto <span id="mpc_prod_required" class="text-red-500">*</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input type="checkbox" id="mpc_sin_producto" onchange="mpcToggleSinProducto(this.checked)"
+                            class="w-3.5 h-3.5 rounded accent-indigo-600">
+                        <span class="text-xs text-gray-500">No tengo / no aplica producto</span>
+                    </label>
                 </div>
-                <div id="mpc_resultados" class="absolute z-10 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 w-full max-h-52 overflow-y-auto hidden"></div>
-                <div id="mpc_prod_seleccionado" class="hidden mt-2 flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-sm">
-                    <svg class="w-4 h-4 shrink-0" style="color:#4A568D" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span id="mpc_prod_texto" class="font-medium text-indigo-800 flex-1"></span>
-                    <button type="button" onclick="limpiarProductoMPC()" class="text-indigo-400 hover:text-red-500 transition text-xs">✕ Quitar</button>
+                <div id="mpc_prod_wrap">
+                    <div class="relative">
+                        <input type="text" id="mpc_buscar_prod" autocomplete="off"
+                               placeholder="Buscar por código o descripción..."
+                               class="w-full border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 transition" style="--tw-ring-color:#4A568D;">
+                        <svg class="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <svg id="mpc_spinner" class="animate-spin absolute right-2.5 top-2.5 w-4 h-4 hidden" style="color:#4A568D" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                    <div id="mpc_resultados" class="absolute z-10 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 w-full max-h-52 overflow-y-auto hidden"></div>
+                    <div id="mpc_prod_seleccionado" class="hidden mt-2 flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-sm">
+                        <svg class="w-4 h-4 shrink-0" style="color:#4A568D" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span id="mpc_prod_texto" class="font-medium text-indigo-800 flex-1"></span>
+                        <button type="button" onclick="limpiarProductoMPC()" class="text-indigo-400 hover:text-red-500 transition text-xs">✕ Quitar</button>
+                    </div>
                 </div>
+                <p id="mpc_sin_prod_badge" class="hidden mt-1 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Se enviará sin producto especificado. El equipo de almacén podrá identificarlo.
+                </p>
             </div>
 
             {{-- Título --}}
@@ -1887,7 +1992,23 @@ function _actualizarFilaTicket(id) {
    HELPERS BÚSQUEDA DE PRODUCTOS (compartido por ambos modales)
 ════════════════════════════════════════════════════════════ */
 const API_BUSCAR = '{{ route("api.productos.search") }}';
-let spDebounce = null, mpcDebounce = null;
+let spDebounce = null, mpcDebounce = null, _mtckProdDebounce = null;
+
+document.getElementById('mtckd_prod_search').addEventListener('input', function() {
+    clearTimeout(_mtckProdDebounce);
+    const val = this.value;
+    _mtckProdDebounce = setTimeout(() => {
+        buscarProductos(val, 'mtckd_prod_spinner', items =>
+            renderResultados(items, 'mtckd_prod_results', datos => {
+                document.getElementById('mtckd_prod_id').value = datos.id;
+                document.getElementById('mtckd_prod_selected_text').textContent = datos.codigo + (datos.desc ? ' \u2014 ' + datos.desc : '');
+                document.getElementById('mtckd_prod_selected').classList.remove('hidden');
+                document.getElementById('mtckd_prod_search').classList.add('hidden');
+                document.getElementById('mtckd_prod_results').classList.add('hidden');
+            })
+        );
+    }, 300);
+});
 
 function buscarProductos(q, spinnerId, callback) {
     const spinner = spinnerId ? document.getElementById(spinnerId) : null;
@@ -2011,6 +2132,8 @@ function abrirModalMoverPiezaConc() {
     document.body.style.overflow = 'hidden';
     document.getElementById('formMoverPiezaConc').reset();
     limpiarProductoMPC();
+    document.getElementById('mpc_sin_producto').checked = false;
+    mpcToggleSinProducto(false);
     document.getElementById('mpc_imagePreview').innerHTML = '';
     document.getElementById('mpc_imagePreview').classList.add('hidden');
     document.getElementById('btnGuardarMPC').disabled = false;
@@ -2052,8 +2175,16 @@ document.getElementById('modalMoverPiezaConc').addEventListener('click', functio
     if (e.target === this) cerrarModalMoverPiezaConc();
 });
 
+function mpcToggleSinProducto(sinProducto) {
+    document.getElementById('mpc_prod_wrap').classList.toggle('hidden', sinProducto);
+    document.getElementById('mpc_prod_required').classList.toggle('hidden', sinProducto);
+    document.getElementById('mpc_sin_prod_badge').classList.toggle('hidden', !sinProducto);
+    if (sinProducto) { limpiarProductoMPC(); }
+}
+
 document.getElementById('formMoverPiezaConc').addEventListener('submit', function(e) {
-    if (!document.getElementById('mpc_producto_id').value) {
+    const sinProducto = document.getElementById('mpc_sin_producto').checked;
+    if (!sinProducto && !document.getElementById('mpc_producto_id').value) {
         e.preventDefault();
         document.getElementById('mpc_buscar_prod').classList.remove('hidden');
         document.getElementById('mpc_buscar_prod').focus();
