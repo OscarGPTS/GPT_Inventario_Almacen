@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\MovimientosExport;
 use App\Models\Movimiento;
 use App\Models\Producto;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MovimientoController extends Controller
 {
@@ -56,6 +58,22 @@ class MovimientoController extends Controller
         $movimientos = $query->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
 
         return view('movimientos.index', compact('movimientos', 'stats'));
+    }
+
+    public function exportar(Request $request)
+    {
+        $filename = 'movimientos_' . now()->format('Y-m-d_H-i') . '.xlsx';
+
+        return Excel::download(
+            new MovimientosExport(
+                $request->filled('tipo_movimiento') ? $request->tipo_movimiento : null,
+                $request->filled('fuente')          ? $request->fuente          : null,
+                $request->filled('fecha_desde')     ? $request->fecha_desde     : null,
+                $request->filled('fecha_hasta')     ? $request->fecha_hasta     : null,
+                $request->filled('search')          ? $request->search          : null,
+            ),
+            $filename
+        );
     }
 
     public function porProducto(Producto $producto)

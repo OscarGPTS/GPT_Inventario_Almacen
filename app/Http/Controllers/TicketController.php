@@ -15,10 +15,16 @@ use App\Mail\TicketCreatedMail;
 use App\Mail\TicketAssignedMail;
 use App\Mail\TicketCompletedMail;
 use App\Mail\TicketSurveyMail;
+use App\Notifications\TicketPendingApprovalNotification;
+use App\Notifications\TicketAssignedNotification;
+use App\Notifications\TicketAssignedToWarehouseNotification;
+use App\Notifications\TicketCompletedNotification;
+use App\Notifications\SurveyCompletedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
@@ -127,12 +133,13 @@ class TicketController extends Controller
 
             DB::commit();
 
-            // Notificar a admins/admin_almacen
+            // Notificar a admins/admin_almacen (correo + base de datos)
             $ticket->load(['user', 'producto']);
             $admins = User::whereHasRole(['admin', 'admin_almacen'])->get();
             foreach ($admins as $admin) {
                 Mail::to($admin->email)->send(new TicketCreatedMail($ticket));
             }
+            Notification::send($admins, new TicketPendingApprovalNotification($ticket));
 
             return redirect()->route('solicitudes.concentrado', ['tab' => 'movimiento'])
                 ->with('success', 'Solicitud creada exitosamente.');
@@ -271,9 +278,13 @@ class TicketController extends Controller
 
         $ticket->assignTo($assignee);
 
-        // Notificar al solicitante
-        $ticket->load(['user', 'producto']);
+        // Notificar al solicitante y al almacenista asignado
+        $ticket->load(['user', 'producto', 'assignedTo']);
         Mail::to($ticket->user->email)->send(new TicketAssignedMail($ticket));
+        $ticket->user->notify(new TicketAssignedNotification($ticket));
+        if ($assignee->id !== $ticket->user_id) {
+            $assignee->notify(new TicketAssignedToWarehouseNotification($ticket));
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['ok' => true, 'message' => 'Ticket asignado a ' . $assignee->name]);
@@ -347,6 +358,7 @@ class TicketController extends Controller
             // Notificar al solicitante que el ticket fue completado
             $ticket->load(['user', 'assignedTo', 'producto']);
             Mail::to($ticket->user->email)->send(new TicketCompletedMail($ticket));
+            $ticket->user->notify(new TicketCompletedNotification($ticket));
 
             if ($request->wantsJson()) {
                 return response()->json(['ok' => true, 'message' => 'Ticket completado exitosamente.']);
@@ -397,9 +409,13 @@ class TicketController extends Controller
 
         // Notificar a admins sobre la encuesta
         $ticket->load(['user', 'assignedTo']);
+        $surveyRecord = $ticket->survey()->latest()->first();
         $admins = User::whereHasRole(['admin', 'admin_almacen'])->get();
         foreach ($admins as $admin) {
             Mail::to($admin->email)->send(new TicketSurveyMail($ticket, $request->rating, $request->comments));
+        }
+        if ($surveyRecord) {
+            Notification::send($admins, new SurveyCompletedNotification($surveyRecord->load('ticket.user')));
         }
 
         if ($request->wantsJson()) {

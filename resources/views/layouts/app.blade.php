@@ -217,15 +217,24 @@
 
                         {{-- Lista --}}
                         <div class="max-h-72 overflow-y-auto">
-                            @forelse($notifItems as $notif)
-                            @php
+                            @forelse($notifItems as $notif)                            @php
                                 $isUnread = is_null($notif->read_at);
                                 $data     = $notif->data;
                                 $type     = $data['type'] ?? 'general';
                                 $msg      = $data['message'] ?? 'Notificación';
                                 $codigo   = $data['codigo'] ?? null;
                                 $ticketId = $data['ticket_id'] ?? null;
-                                $destUrl  = $ticketId ? route('solicitudes.concentrado') . '?tab=movimiento' : '';
+                                $destUrl  = '';
+                                if ($ticketId) {
+                                    $destUrl = route('solicitudes.concentrado') . '?tab=movimiento';
+                                } elseif ($type === 'nueva_solicitud') {
+                                    $destUrl = route('solicitudes.concentrado') . '?tab=material';
+                                }
+                                $linkLabel = match($type) {
+                                    'nueva_solicitud'         => 'Ver requisición',
+                                    'survey_completed'        => 'Ver encuesta',
+                                    default                   => 'Ver solicitud',
+                                };
                                 $iconColor = match($type) {
                                     'ticket_pending_approval'  => '#7C3AED',
                                     'ticket_assigned'          => '#3B82F6',
@@ -259,13 +268,26 @@
                                     <span class="text-xs font-bold" style="color:{{ $iconColor }}">{{ $codigo }}</span>
                                     @endif
                                     <p class="text-xs text-gray-700 leading-snug {{ $isUnread ? 'font-semibold' : '' }} mt-0.5">{{ $msg }}</p>
-                                    <p class="text-[11px] text-gray-400 mt-0.5">{{ $notif->created_at->diffForHumans() }}</p>
+                                    <div class="flex items-center justify-between gap-1 mt-0.5">
+                                        <p class="text-[11px] text-gray-400">{{ $notif->created_at->diffForHumans() }}</p>
+                                        @if($destUrl)
+                                        <span class="text-[11px] font-medium" style="color:{{ $iconColor }}">{{ $linkLabel }} →</span>
+                                        @endif
+                                    </div>
                                 </div>
-                                @if($isUnread)
-                                <div class="flex-shrink-0 self-center">
+                                <div class="flex-shrink-0 self-center flex flex-col items-center gap-1.5">
+                                    @if($isUnread)
                                     <div class="w-2 h-2 rounded-full bg-blue-500 notif-dot"></div>
+                                    @endif
+                                    <button type="button"
+                                        onclick="event.stopPropagation(); eliminarNotif('{{ $notif->id }}', this)"
+                                        class="text-gray-300 hover:text-red-400 transition p-0.5 rounded"
+                                        title="Eliminar notificación">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
                                 </div>
-                                @endif
                             </div>
                             @empty
                             <div class="px-4 py-8 text-center">
@@ -275,6 +297,13 @@
                                 <p class="text-sm text-gray-400">Sin notificaciones</p>
                             </div>
                             @endforelse
+                        </div>
+                        {{-- Pie: Ver todas --}}
+                        <div class="border-t border-gray-100 px-4 py-2.5 bg-gray-50 text-center">
+                            <a href="{{ route('notificaciones.index') }}"
+                               class="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition">
+                                Ver todas las notificaciones
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -393,6 +422,23 @@
                 if (next === 0) { badge.remove(); headerBadge?.remove(); }
                 else badge.textContent = next > 99 ? '99+' : next;
             }
+        }
+
+        function eliminarNotif(id, btn) {
+            const item = btn.closest('.notif-item');
+            fetch(`/notificaciones/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                }
+            }).then(r => {
+                if (r.ok) {
+                    const wasUnread = item.classList.contains('bg-blue-50/60');
+                    if (wasUnread) _actualizarBadge(-1);
+                    item.remove();
+                }
+            }).catch(() => {});
         }
     </script>
 </body>

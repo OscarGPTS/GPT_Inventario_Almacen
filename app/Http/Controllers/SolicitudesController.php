@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\NuevaSolicitudMail;
+use App\Notifications\NuevaSolicitudNotification;
 use App\Models\Departamento;
 use App\Models\Producto;
 use App\Models\Solicitud;
@@ -10,6 +11,7 @@ use App\Models\UnidadMedida;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 
 class SolicitudesController extends Controller
 {
@@ -60,13 +62,12 @@ class SolicitudesController extends Controller
             $solicitud->load(['producto', 'unidadMedida', 'departamento', 'usuarioRegistro']);
             $destinatarios = User::whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'admin_almacen', 'almacenista']))
                 ->whereNotNull('email')
-                ->pluck('email')
-                ->filter()
-                ->values()
-                ->toArray();
-            if (!empty($destinatarios)) {
-                Mail::to($destinatarios)->send(new NuevaSolicitudMail($solicitud));
+                ->get();
+            $emails = $destinatarios->pluck('email')->filter()->values()->toArray();
+            if (!empty($emails)) {
+                Mail::to($emails)->send(new NuevaSolicitudMail($solicitud));
             }
+            Notification::send($destinatarios, new NuevaSolicitudNotification($solicitud));
         } catch (\Exception $e) {
             // El fallo del correo no debe interrumpir el flujo
             \Log::error('Error enviando correo de nueva solicitud: ' . $e->getMessage());

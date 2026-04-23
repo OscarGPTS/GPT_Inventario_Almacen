@@ -58,6 +58,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Movimientos
     Route::get('/movimientos', [MovimientoController::class, 'index'])->name('movimientos.index');
+    Route::get('/movimientos/exportar', [MovimientoController::class, 'exportar'])->name('movimientos.exportar');
     Route::get('/movimientos/producto/{producto}', [MovimientoController::class, 'porProducto'])->name('movimientos.producto');
 
     // Usuarios
@@ -114,8 +115,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 
     // Notificaciones web
+    Route::get('/notificaciones', [NotificacionesController::class, 'index'])->name('notificaciones.index');
     Route::post('/notificaciones/{id}/leer', [NotificacionesController::class, 'leer'])->name('notificaciones.leer');
     Route::post('/notificaciones/leer-todas', [NotificacionesController::class, 'leerTodas'])->name('notificaciones.leerTodas');
+    Route::delete('/notificaciones/{id}', [NotificacionesController::class, 'destroy'])->name('notificaciones.destroy');
 
     // Logout
     Route::post('/logout', function () {
