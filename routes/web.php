@@ -104,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tickets/crear', [TicketController::class, 'create'])->name('tickets.create');
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+    Route::get('/tickets/{ticket}/json', [TicketController::class, 'detalle'])->name('tickets.detalle');
     Route::post('/tickets/{ticket}/asignar', [TicketController::class, 'assign'])->name('tickets.assign');
     Route::post('/tickets/{ticket}/completar', [TicketController::class, 'complete'])->name('tickets.complete');
     Route::post('/tickets/{ticket}/cancelar', [TicketController::class, 'cancel'])->name('tickets.cancel');

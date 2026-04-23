@@ -252,17 +252,29 @@
                             @else<span class="text-gray-400">—</span>@endif
                         </td>
                         <td class="px-3 py-2 text-center whitespace-nowrap">
-                            @if($esGestor && !in_array($r->estado, ['entregada','cancelada']))
-                            <button type="button"
-                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}"
-                                data-status-id="{{ $r->id }}" data-tipo="mat"
-                                data-url="{{ route('solicitudes.cambiarEstado', $r->id) }}"
-                                onclick="abrirPopoverEstado(event,{{ $r->id }},'{{ $r->estado }}','{{ route('solicitudes.cambiarEstado', $r->id) }}','mat')">
-                                {{ ucfirst($r->estado) }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            @else
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $estadoBadgeSol[$r->estado] ?? '' }}">{{ ucfirst($r->estado) }}</span>
-                            @endif
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}">{{ ucfirst($r->estado) }}</span>
+                                @if($esGestor && !in_array($r->estado, ['entregada','cancelada']))
+                                <button type="button"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition"
+                                    data-status-id="{{ $r->id }}" data-tipo="mat"
+                                    data-mat-folio="{{ $r->folio ?? '—' }}"
+                                    data-mat-fecha="{{ $r->fecha ? $r->fecha->format('d/m/Y') : '—' }}"
+                                    data-mat-solicitante="{{ $r->solicitante ?? '—' }}"
+                                    data-mat-depto="{{ $r->departamento->nombre ?? '—' }}"
+                                    data-mat-codigo="{{ $r->producto->codigo ?? '—' }}"
+                                    data-mat-desc="{{ addslashes($r->producto->descripcion ?? '—') }}"
+                                    data-mat-cantidad="{{ $r->cantidad !== null ? number_format($r->cantidad, 2) : '—' }}"
+                                    data-mat-um="{{ $r->unidadMedida->codigo ?? '—' }}"
+                                    data-mat-prioridad="{{ ucfirst($r->prioridad ?? '—') }}"
+                                    data-mat-obs="{{ addslashes($r->observaciones ?? '') }}"
+                                    data-mat-estado="{{ $r->estado }}"
+                                    data-mat-url="{{ route('solicitudes.cambiarEstado', $r->id) }}"
+                                    onclick="abrirModalCambiarMat(this)">
+                                    Cambiar
+                                </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -302,7 +314,7 @@
                     <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-indigo-50 transition-colors">
                         <td class="px-3 py-2 font-mono font-bold whitespace-nowrap" style="color:{{ $acento }}">{{ $t->formatted_code }}</td>
                         <td class="px-3 py-2">
-                            <a href="{{ route('tickets.show', $t) }}" class="font-medium text-gray-800 hover:underline">{{ \Str::limit($t->title, 50) }}</a>
+                            <button type="button" onclick="abrirModalTicket({{ $t->id }})" class="font-medium text-gray-800 hover:underline text-left">{{ \Str::limit($t->title, 50) }}</button>
                         </td>
                         <td class="px-3 py-2 whitespace-nowrap">
                             @if($t->producto)<span class="font-mono font-bold" style="color:{{ $acento }}">{{ $t->producto->codigo }}</span>
@@ -310,22 +322,18 @@
                         </td>
                         @if($esGestor)<td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $t->user->name ?? '—' }}</td>@endif
                         <td class="px-3 py-2 text-center whitespace-nowrap">
-                            @if($esGestor && !in_array($t->status, ['finalizado','cancelado']))
-                            <button type="button"
-                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-medium border hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $badgeMapTck[$t->status] ?? '' }}"
-                                data-status-id="{{ $t->id }}" data-tipo="tck"
-                                data-url="{{ route('tickets.cambiarStatus', $t->id) }}"
-                                onclick="abrirPopoverEstado(event,{{ $t->id }},'{{ $t->status }}','{{ route('tickets.cambiarStatus', $t->id) }}','tck')">
-                                {{ $statusLabelTck[$t->status] ?? $t->status }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            @else
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">{{ $statusLabelTck[$t->status] ?? $t->status }}</span>
-                            @endif
+                            <span data-ticket-row="{{ $t->id }}" class="ticket-status-badge inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">{{ $statusLabelTck[$t->status] ?? $t->status }}</span>
                         </td>
                         <td class="px-3 py-2 text-gray-600 whitespace-nowrap">{{ $t->assignedTo->name ?? '—' }}</td>
                         <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ $t->created_at->format('d/m/Y') }}</td>
                         <td class="px-3 py-2 text-center">
-                            <a href="{{ route('tickets.show', $t) }}" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">Ver</a>
+                            <button type="button" onclick="abrirModalTicket({{ $t->id }})" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                Ver Detalles
+                            </button>
                         </td>
                     </tr>
                     @empty
@@ -358,7 +366,7 @@
                         <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wide whitespace-nowrap border-r border-teal-600">DN / NP</th>
                         <th class="px-3 py-2.5 text-center font-semibold uppercase tracking-wide whitespace-nowrap border-r border-teal-600">PRIORIDAD</th>
                         <th class="px-3 py-2.5 text-center font-semibold uppercase tracking-wide whitespace-nowrap border-r border-teal-600">ESTADO</th>
-                        <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wide whitespace-nowrap">REGISTRADO POR</th>
+                        {{-- <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wide whitespace-nowrap">REGISTRADO POR</th> --}}
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -382,19 +390,31 @@
                             @else<span class="text-gray-400">—</span>@endif
                         </td>
                         <td class="px-3 py-2 text-center whitespace-nowrap">
-                            @if($esGestor && !in_array($r->estado, ['entregada','cancelada']))
-                            <button type="button"
-                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}"
-                                data-status-id="{{ $r->id }}" data-tipo="mat"
-                                data-url="{{ route('solicitudes.cambiarEstado', $r->id) }}"
-                                onclick="abrirPopoverEstado(event,{{ $r->id }},'{{ $r->estado }}','{{ route('solicitudes.cambiarEstado', $r->id) }}','mat')">
-                                {{ ucfirst($r->estado) }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            @else
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $estadoBadgeSol[$r->estado] ?? '' }}">{{ ucfirst($r->estado) }}</span>
-                            @endif
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $estadoBadgeSol[$r->estado] ?? 'bg-gray-100 text-gray-600' }}">{{ ucfirst($r->estado) }}</span>
+                                @if($esGestor && !in_array($r->estado, ['entregada','cancelada']))
+                                <button type="button"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:border-gray-400 transition"
+                                    data-status-id="{{ $r->id }}" data-tipo="mat"
+                                    data-mat-folio="{{ $r->folio ?? '—' }}"
+                                    data-mat-fecha="{{ $r->fecha ? $r->fecha->format('d/m/Y') : '—' }}"
+                                    data-mat-solicitante="{{ $r->solicitante ?? '—' }}"
+                                    data-mat-depto="{{ $r->departamento->nombre ?? '—' }}"
+                                    data-mat-codigo="{{ $r->producto->codigo ?? '—' }}"
+                                    data-mat-desc="{{ addslashes($r->producto->descripcion ?? '—') }}"
+                                    data-mat-cantidad="{{ $r->cantidad !== null ? number_format($r->cantidad, 2) : '—' }}"
+                                    data-mat-um="{{ $r->unidadMedida->codigo ?? '—' }}"
+                                    data-mat-prioridad="{{ ucfirst($r->prioridad ?? '—') }}"
+                                    data-mat-obs="{{ addslashes($r->observaciones ?? '') }}"
+                                    data-mat-estado="{{ $r->estado }}"
+                                    data-mat-url="{{ route('solicitudes.cambiarEstado', $r->id) }}"
+                                    onclick="abrirModalCambiarMat(this)">
+                                    Cambiar
+                                </button>
+                                @endif
+                            </div>
                         </td>
-                        <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ $r->usuarioRegistro->name ?? '—' }}</td>
+                        {{-- <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ $r->usuarioRegistro->name ?? '—' }}</td> --}}
                     </tr>
                     @empty
                     <tr>
@@ -447,9 +467,9 @@
                     <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-blue-50 transition-colors">
                         <td class="px-4 py-3 font-mono font-bold whitespace-nowrap" style="color:{{ $acento }}">{{ $t->formatted_code }}</td>
                         <td class="px-4 py-3">
-                            <a href="{{ route('tickets.show', $t) }}" class="font-medium text-gray-800 hover:underline" style="color:{{ $acento }}">
+                            <button type="button" onclick="abrirModalTicket({{ $t->id }})" class="font-medium hover:underline text-left" style="color:{{ $acento }}">
                                 {{ \Str::limit($t->title, 50) }}
-                            </a>
+                            </button>
                             <p class="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{{ \Str::limit($t->description, 80) }}</p>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-xs">
@@ -463,17 +483,7 @@
                         <td class="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">{{ $t->user->name ?? '—' }}</td>
                         @endif
                         <td class="px-4 py-3 text-center whitespace-nowrap">
-                            @if($esGestor && !in_array($t->status, ['finalizado','cancelado']))
-                            <button type="button"
-                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition {{ $badgeMapTck[$t->status] ?? '' }}"
-                                data-status-id="{{ $t->id }}" data-tipo="tck"
-                                data-url="{{ route('tickets.cambiarStatus', $t->id) }}"
-                                onclick="abrirPopoverEstado(event,{{ $t->id }},'{{ $t->status }}','{{ route('tickets.cambiarStatus', $t->id) }}','tck')">
-                                {{ $statusLabelTck[$t->status] ?? $t->status }}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            @else
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">{{ $statusLabelTck[$t->status] ?? $t->status }}</span>
-                            @endif
+                            <span data-ticket-row="{{ $t->id }}" class="ticket-status-badge inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border {{ $badgeMapTck[$t->status] ?? '' }}">{{ $statusLabelTck[$t->status] ?? $t->status }}</span>
                         </td>
                         <td class="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">{{ $t->assignedTo->name ?? '—' }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">
@@ -488,14 +498,14 @@
                         </td>
                         <td class="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">{{ $t->created_at->format('d/m/Y H:i') }}</td>
                         <td class="px-4 py-3 text-center">
-                            <a href="{{ route('tickets.show', $t) }}"
+                            <button type="button" onclick="abrirModalTicket({{ $t->id }})"
                                class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                 </svg>
-                                Ver
-                            </a>
+                                Ver Detalles
+                            </button>
                         </td>
                     </tr>
                     @empty
@@ -832,7 +842,7 @@ document.getElementById('formMaterial').addEventListener('submit', function(e) {
     btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Guardando...`;
 });
 
-/* ─── Popover de estado (compartido: material + tickets) ─── */
+/* ─── Modal de cambio de estado (compartido: material + tickets) ─── */
 const _BADGE_MAT = {
     pendiente: 'bg-yellow-100 text-yellow-800',
     aprobada : 'bg-blue-100 text-blue-800',
@@ -850,96 +860,785 @@ const _LABEL_TCK = { pendiente:'Pendiente', en_proceso:'En Proceso', finalizado:
 const _OPCIONES_MAT = ['pendiente','aprobada','entregada','cancelada'];
 const _OPCIONES_TCK = ['pendiente','en_proceso','finalizado','cancelado'];
 
-let _popoverEl = null;
+/* Botón fuente activo (para actualizar badge en tabla tras éxito) */
+let _btnFuente = null;
 
-function abrirPopoverEstado(event, id, estadoActual, url, tipo) {
-    event.stopPropagation();
-    cerrarPopover();
+function abrirModalCambiarMat(btn) {
+    _btnFuente = btn;
+    const d = btn.dataset;
+    document.getElementById('mmat_folio').textContent       = d.matFolio;
+    document.getElementById('mmat_fecha').textContent       = d.matFecha;
+    document.getElementById('mmat_solicitante').textContent = d.matSolicitante;
+    document.getElementById('mmat_depto').textContent       = d.matDepto;
+    document.getElementById('mmat_codigo').textContent      = d.matCodigo;
+    document.getElementById('mmat_desc').textContent        = d.matDesc;
+    document.getElementById('mmat_cantidad').textContent    = d.matCantidad + ' ' + d.matUm;
+    document.getElementById('mmat_prioridad').textContent   = d.matPrioridad;
+    document.getElementById('mmat_obs').textContent         = d.matObs || '—';
 
-    // Estados terminales — no permiten cambio
-    const terminalesMat = ['entregada', 'cancelada'];
-    const terminalesTck = ['finalizado', 'cancelado'];
-    const terminales = tipo === 'mat' ? terminalesMat : terminalesTck;
-    if (terminales.includes(estadoActual)) return;
-
-    const opciones = tipo === 'mat' ? _OPCIONES_MAT : _OPCIONES_TCK;
-    const badges   = tipo === 'mat' ? _BADGE_MAT    : _BADGE_TCK;
-    const labels   = tipo === 'mat' ? _LABEL_MAT    : _LABEL_TCK;
-
-    const div = document.createElement('div');
-    div.id = '_status_popover';
-    div.className = 'fixed z-[9999] bg-white border border-gray-200 rounded-xl shadow-xl py-1.5 min-w-[10rem]';
-    div.style.cssText = 'box-shadow:0 8px 24px rgba(0,0,0,.14)';
-
-    opciones.filter(o => o !== estadoActual).forEach(opt => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'w-full px-3 py-1.5 text-left text-xs font-medium hover:bg-gray-50 transition flex items-center gap-2';
-        const extraBorder = tipo === 'tck' ? ' border' : '';
-        btn.innerHTML = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold${extraBorder} ${badges[opt]}">${labels[opt]}</span>`;
-        btn.addEventListener('click', () => {
-            cerrarPopover();
-            _cambiarEstado(id, opt, url, tipo);
-        });
-        div.appendChild(btn);
+    // Llenar opciones del select (excluir estado actual)
+    const sel = document.getElementById('mmat_nuevo_estado');
+    sel.innerHTML = '';
+    _OPCIONES_MAT.filter(o => o !== d.matEstado).forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o; opt.textContent = _LABEL_MAT[o];
+        sel.appendChild(opt);
     });
 
-    document.body.appendChild(div);
-    _popoverEl = div;
+    // Mostrar badge del estado actual
+    const badgeEl = document.getElementById('mmat_badge_actual');
+    badgeEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ' + (_BADGE_MAT[d.matEstado] || 'bg-gray-100 text-gray-700');
+    badgeEl.textContent = _LABEL_MAT[d.matEstado] || d.matEstado;
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const menuH = div.children.length * 36 + 12;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    div.style.left = Math.min(rect.left, window.innerWidth - 176) + 'px';
-    div.style.top  = (spaceBelow > menuH + 8 ? rect.bottom + window.scrollY + 4 : rect.top + window.scrollY - menuH - 4) + 'px';
+    document.getElementById('mmat_url').value = d.matUrl;
+    document.getElementById('mmat_id').value  = d.statusId;
+    document.getElementById('mmat_error').classList.add('hidden');
 
-    setTimeout(() => document.addEventListener('click', _cerrarPopoverFuera), 10);
+    const modal = document.getElementById('modalCambiarMat');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
-function _cerrarPopoverFuera(e) {
-    if (_popoverEl && !_popoverEl.contains(e.target)) cerrarPopover();
-}
-function cerrarPopover() {
-    if (_popoverEl) { _popoverEl.remove(); _popoverEl = null; }
-    document.removeEventListener('click', _cerrarPopoverFuera);
+function cerrarModalCambiarMat() {
+    const modal = document.getElementById('modalCambiarMat');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    _btnFuente = null;
 }
 
-async function _cambiarEstado(id, nuevoEstado, url, tipo) {
-    const btns = document.querySelectorAll(`[data-status-id="${id}"][data-tipo="${tipo}"]`);
-    btns.forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
+async function confirmarCambiarMat() {
+    const url   = document.getElementById('mmat_url').value;
+    const id    = document.getElementById('mmat_id').value;
+    const nuevo = document.getElementById('mmat_nuevo_estado').value;
+    const errEl = document.getElementById('mmat_error');
+    const btnOk = document.getElementById('mmat_btn_confirmar');
 
-    const field = tipo === 'mat' ? 'estado' : 'status';
+    btnOk.disabled = true;
+    btnOk.textContent = 'Guardando...';
+    errEl.classList.add('hidden');
+
     try {
         const res = await fetch(url, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_C, 'Accept': 'application/json' },
-            body: JSON.stringify({ [field]: nuevoEstado })
+            body: JSON.stringify({ estado: nuevo })
         });
-        if (!res.ok) throw new Error('Error');
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || 'Error al guardar');
 
-        const badges   = tipo === 'mat' ? _BADGE_MAT    : _BADGE_TCK;
-        const labels   = tipo === 'mat' ? _LABEL_MAT    : _LABEL_TCK;
-        const allBadges = tipo === 'mat' ? Object.values(_BADGE_MAT) : Object.values(_BADGE_TCK);
-        const extraBorder = tipo === 'tck' ? ' border' : '';
-        const newUrl = url; // url is already bound in closure
-
-        btns.forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '';
-            // Remove all old color classes
-            allBadges.forEach(cls => cls.split(' ').forEach(c => btn.classList.remove(c)));
-            // Add new color classes
-            badges[nuevoEstado]?.split(' ').forEach(c => btn.classList.add(c));
-            // Update label + chevron, re-bind onclick
-            btn.innerHTML = `${labels[nuevoEstado] || nuevoEstado}<svg class="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>`;
-            btn.onclick = (ev) => abrirPopoverEstado(ev, id, nuevoEstado, newUrl, tipo);
-        });
-    } catch(e) {
-        btns.forEach(b => { b.disabled = false; b.style.opacity = ''; });
-        alert('No se pudo actualizar el estado.');
+        // Actualizar badge + botón en la fila
+        if (_btnFuente) {
+            const cell  = _btnFuente.closest('td');
+            if (cell) {
+                const badge = cell.querySelector('span');
+                if (badge) {
+                    Object.values(_BADGE_MAT).forEach(cls => cls.split(' ').forEach(c => badge.classList.remove(c)));
+                    (_BADGE_MAT[nuevo] || '').split(' ').forEach(c => badge.classList.add(c));
+                    badge.textContent = _LABEL_MAT[nuevo] || nuevo;
+                }
+            }
+            _btnFuente.dataset.matEstado = nuevo;
+            const terminales = ['entregada','cancelada'];
+            if (terminales.includes(nuevo)) {
+                _btnFuente.remove();
+            } else {
+                // Actualizar datos del botón para la próxima vez
+            }
+        }
+        cerrarModalCambiarMat();
+    } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.remove('hidden');
+    } finally {
+        btnOk.disabled = false;
+        btnOk.textContent = 'Confirmar cambio';
     }
 }
+
+// ── Modal ticket detalle ─────────────────────────────────────────────────
+let _tckModalId   = null;
+let _tckModalData = null;
+let _mtckSurveyRating = 0;
+
+function abrirModalTicket(id) {
+    _tckModalId = id;
+    const modal = document.getElementById('modalTckDetalle');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('mtckd_loading').classList.remove('hidden');
+    document.getElementById('mtckd_body').classList.add('hidden');
+    document.getElementById('mtckd_error').classList.add('hidden');
+    document.getElementById('mtckd_footer').classList.add('hidden');
+    document.getElementById('mtckd_title').textContent = 'Cargando\u2026';
+    document.getElementById('mtckd_code').textContent  = '';
+    _cargarModalTicket(id);
+}
+
+function cerrarModalTckDetalle() {
+    document.getElementById('modalTckDetalle').classList.add('hidden');
+    document.getElementById('modalTckDetalle').classList.remove('flex');
+    document.body.style.overflow = '';
+    _tckModalId   = null;
+    _tckModalData = null;
+}
+
+async function _cargarModalTicket(id) {
+    try {
+        const res = await fetch('/tickets/' + id + '/json', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            throw new Error(j.message || 'Error ' + res.status);
+        }
+        const data = await res.json();
+        _tckModalData = data;
+        _renderModalTicket(data);
+    } catch(e) {
+        document.getElementById('mtckd_loading').classList.add('hidden');
+        const errBox = document.getElementById('mtckd_error');
+        errBox.classList.remove('hidden');
+        errBox.querySelector('p').textContent = e.message || 'Error al cargar el ticket.';
+    }
+}
+
+function _renderModalTicket(data) {
+    const { ticket, permissions, almacenUsers, urls } = data;
+    const isTerminal = ticket.status === 'finalizado' || ticket.status === 'cancelado';
+
+    // Header
+    document.getElementById('mtckd_code').textContent  = ticket.formatted_code;
+    document.getElementById('mtckd_title').textContent = ticket.title;
+    document.getElementById('mtckd_ext_link').href      = urls.show;
+    const badge = document.getElementById('mtckd_status_badge');
+    badge.className = 'inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border ' + ticket.status_badge_class;
+    badge.textContent = ticket.status_text;
+
+    // Stepper
+    const step2Active = ['en_proceso','finalizado','cancelado'].includes(ticket.status) || !!ticket.assigned_at;
+    const step3Active = ticket.status === 'finalizado' || ticket.status === 'cancelado';
+    const isCancelled = ticket.status === 'cancelado';
+    const _stepActive  = (el, on) => { el.classList.toggle('text-teal-600', on); el.classList.toggle('text-gray-400', !on); };
+    const _dotActive   = (id, on) => {
+        const d = document.getElementById(id);
+        d.className = on
+            ? 'w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold bg-teal-100 border-2 border-teal-500 text-teal-600'
+            : 'w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold bg-gray-100 border-2 border-gray-300 text-gray-400';
+    };
+    _stepActive(document.getElementById('mtckd_step1'), true);
+    _stepActive(document.getElementById('mtckd_step2'), step2Active);
+    _dotActive('mtckd_step2_dot', step2Active);
+    _stepActive(document.getElementById('mtckd_step3'), step3Active);
+    _dotActive('mtckd_step3_dot', step3Active);
+    if (isCancelled) { document.getElementById('mtckd_step3').classList.replace('text-teal-600','text-red-500'); }
+    document.getElementById('mtckd_step2_name').textContent = ticket.assignedTo?.name ? ('\u00a0(' + ticket.assignedTo.name + ')') : '';
+    document.getElementById('mtckd_step3_label').textContent = isCancelled ? 'Cancelado' : 'Completado';
+
+    // Info
+    document.getElementById('mtckd_solicitante').textContent = ticket.user?.name || '\u2014';
+    document.getElementById('mtckd_fecha_creado').textContent = ticket.created_at;
+    if (ticket.producto) {
+        document.getElementById('mtckd_producto').innerHTML = urls.producto
+            ? '<a href="' + escHtml(urls.producto) + '" class="font-mono font-bold hover:underline" style="color:#4A568D">' + escHtml(ticket.producto.codigo) + '</a> \u2014 ' + escHtml(ticket.producto.descripcion)
+            : '<span class="font-mono font-bold">' + escHtml(ticket.producto.codigo) + '</span> \u2014 ' + escHtml(ticket.producto.descripcion);
+    } else {
+        document.getElementById('mtckd_producto').textContent = '\u2014';
+    }
+    document.getElementById('mtckd_asignado').textContent  = ticket.assignedTo?.name || '\u2014';
+    document.getElementById('mtckd_completado').textContent = ticket.completed_at || '\u2014';
+
+    // Description
+    document.getElementById('mtckd_descripcion').textContent = ticket.description;
+
+    // Solicitud images
+    const imgSolBox = document.getElementById('mtckd_img_solicitud');
+    if (ticket.solicitudImages.length > 0) {
+        imgSolBox.classList.remove('hidden');
+        imgSolBox.querySelector('.grid').innerHTML = ticket.solicitudImages.map(img =>
+            '<a href="' + escHtml(img.url) + '" target="_blank" rel="noopener" class="block aspect-square overflow-hidden rounded-lg border border-gray-200 hover:opacity-80 transition"><img src="' + escHtml(img.url) + '" alt="' + escHtml(img.original_name) + '" class="w-full h-full object-cover"></a>'
+        ).join('');
+    } else { imgSolBox.classList.add('hidden'); }
+
+    // Cancellation
+    const cancelBox = document.getElementById('mtckd_cancel_box');
+    if (ticket.status === 'cancelado') {
+        cancelBox.classList.remove('hidden');
+        document.getElementById('mtckd_cancel_reason').textContent  = ticket.cancellation_reason || 'Sin motivo especificado';
+        document.getElementById('mtckd_cancelled_at').textContent = ticket.cancelled_at || '';
+    } else { cancelBox.classList.add('hidden'); }
+
+    // Work evidence
+    const evidBox = document.getElementById('mtckd_evidence_box');
+    if (ticket.status === 'finalizado' && ticket.work_evidence) {
+        evidBox.classList.remove('hidden');
+        document.getElementById('mtckd_work_evidence').textContent = ticket.work_evidence;
+        const imgEvidBox = document.getElementById('mtckd_evidence_images');
+        if (ticket.evidenciaImages.length > 0) {
+            imgEvidBox.classList.remove('hidden');
+            imgEvidBox.querySelector('.grid').innerHTML = ticket.evidenciaImages.map(img =>
+                '<a href="' + escHtml(img.url) + '" target="_blank" rel="noopener" class="block aspect-square overflow-hidden rounded-lg border border-gray-200 hover:opacity-80 transition"><img src="' + escHtml(img.url) + '" alt="' + escHtml(img.original_name) + '" class="w-full h-full object-cover"></a>'
+            ).join('');
+        } else { imgEvidBox.classList.add('hidden'); }
+    } else { evidBox.classList.add('hidden'); }
+
+    // Actions section
+    const actionsBox = document.getElementById('mtckd_actions');
+    if ((permissions.esGestor || permissions.esAlmacenista) && !isTerminal) {
+        actionsBox.classList.remove('hidden');
+        // Assign
+        const assignBox = document.getElementById('mtckd_assign_box');
+        if (ticket.status === 'pendiente' || (permissions.esGestor && ticket.status === 'en_proceso')) {
+            assignBox.classList.remove('hidden');
+            document.getElementById('mtckd_btn_assign').dataset.url = urls.assign;
+            const selRow = document.getElementById('mtckd_assign_select_row');
+            if (permissions.esGestor) {
+                selRow.classList.remove('hidden');
+                const sel = document.getElementById('mtckd_assign_select');
+                sel.innerHTML = '<option value="">— Seleccionar almacenista —</option>' +
+                    almacenUsers.map(u => '<option value="' + u.id + '">' + escHtml(u.name) + '</option>').join('');
+            } else { selRow.classList.add('hidden'); }
+        } else { assignBox.classList.add('hidden'); }
+        // Complete
+        const completeBox = document.getElementById('mtckd_complete_box');
+        if (ticket.status === 'en_proceso' || (permissions.esGestor && ticket.status === 'pendiente')) {
+            completeBox.classList.remove('hidden');
+            document.getElementById('mtckd_btn_complete').dataset.url = urls.complete;
+            document.getElementById('mtckd_work_evidence_input').value = '';
+            document.getElementById('mtckd_evidence_files').value = '';
+            document.getElementById('mtckd_evidence_preview').innerHTML = '';
+            document.getElementById('mtckd_evidence_preview').classList.add('hidden');
+        } else { completeBox.classList.add('hidden'); }
+    } else { actionsBox.classList.add('hidden'); }
+
+    // Cancel form reset
+    document.getElementById('mtckd_cancel_section').classList.add('hidden');
+    document.getElementById('mtckd_cancel_reason_input').value = '';
+
+    // Survey
+    const surveyFormBox    = document.getElementById('mtckd_survey_form');
+    const surveyDisplayBox = document.getElementById('mtckd_survey_display');
+    _mtckSurveyRating = 0;
+    if (ticket.status === 'finalizado') {
+        if (permissions.esDueno && !ticket.survey) {
+            surveyFormBox.classList.remove('hidden');
+            surveyDisplayBox.classList.add('hidden');
+            document.getElementById('mtckd_survey_url').value = urls.survey;
+            document.getElementById('mtckd_survey_comments_input').value = '';
+            mtckSetRating(0);
+        } else if (ticket.survey) {
+            surveyFormBox.classList.add('hidden');
+            surveyDisplayBox.classList.remove('hidden');
+            const r = ticket.survey.rating;
+            document.getElementById('mtckd_survey_rating_display').innerHTML =
+                [1,2,3,4,5].map(i => '<svg class="w-5 h-5 ' + (i <= r ? 'text-yellow-400' : 'text-gray-300') + '" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>').join('');
+            document.getElementById('mtckd_survey_rating_text').textContent = r + '/5';
+            document.getElementById('mtckd_survey_date').textContent = ticket.survey.completed_at || '';
+            document.getElementById('mtckd_survey_comments').textContent = ticket.survey.comments || '';
+        } else {
+            surveyFormBox.classList.add('hidden');
+            surveyDisplayBox.classList.add('hidden');
+        }
+    } else {
+        surveyFormBox.classList.add('hidden');
+        surveyDisplayBox.classList.add('hidden');
+    }
+
+    // Footer destructive buttons
+    const deleteBtn = document.getElementById('mtckd_btn_delete');
+    if (permissions.canDelete) {
+        deleteBtn.classList.remove('hidden');
+        deleteBtn.dataset.url = urls.destroy;
+    } else { deleteBtn.classList.add('hidden'); }
+    const cancelBtn = document.getElementById('mtckd_btn_cancel');
+    if (permissions.canCancel) {
+        cancelBtn.classList.remove('hidden');
+        cancelBtn.dataset.url = urls.cancel;
+    } else { cancelBtn.classList.add('hidden'); }
+
+    // Show body + footer
+    document.getElementById('mtckd_loading').classList.add('hidden');
+    document.getElementById('mtckd_body').classList.remove('hidden');
+    document.getElementById('mtckd_footer').classList.remove('hidden');
+    // Reset action feedback
+    document.getElementById('mtckd_error_action').classList.add('hidden');
+    document.getElementById('mtckd_success_action').classList.add('hidden');
+    if (window._mtckSuccessTimer) { clearTimeout(window._mtckSuccessTimer); window._mtckSuccessTimer = null; }
+}
+
+function _mtckShowSuccess(msg) {
+    const el = document.getElementById('mtckd_success_action');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    if (window._mtckSuccessTimer) clearTimeout(window._mtckSuccessTimer);
+    window._mtckSuccessTimer = setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+function mtckSetRating(val) {
+    _mtckSurveyRating = val;
+    document.querySelectorAll('#mtckd_star_row .mtck-star').forEach((s, i) => {
+        s.classList.toggle('text-yellow-400', i < val);
+        s.classList.toggle('text-gray-300',   i >= val);
+    });
+}
+
+async function mtckAsignar() {
+    const btn  = document.getElementById('mtckd_btn_assign');
+    const url  = btn.dataset.url;
+    const errEl = document.getElementById('mtckd_error_action');
+    const selRow = document.getElementById('mtckd_assign_select_row');
+    const body = new FormData();
+    body.append('_token', CSRF_C);
+    if (!selRow.classList.contains('hidden')) {
+        const sel = document.getElementById('mtckd_assign_select');
+        if (!sel.value) { errEl.textContent = 'Selecciona un almacenista'; errEl.classList.remove('hidden'); return; }
+        body.append('assigned_to', sel.value);
+    }
+    btn.disabled = true; btn.textContent = 'Asignando\u2026';
+    errEl.classList.add('hidden');
+    try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_C }, body });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || json.error || 'Error al asignar');
+        _actualizarFilaTicket(_tckModalId);
+        await _cargarModalTicket(_tckModalId);
+        _mtckShowSuccess('\u2713 Almacenista asignado correctamente.');
+    } catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Asignar'; }
+}
+
+async function mtckCompletar() {
+    const btn      = document.getElementById('mtckd_btn_complete');
+    const url      = btn.dataset.url;
+    const errEl    = document.getElementById('mtckd_error_action');
+    const textarea = document.getElementById('mtckd_work_evidence_input');
+    if (!textarea.value.trim()) { errEl.textContent = 'La descripci\u00f3n del trabajo es obligatoria'; errEl.classList.remove('hidden'); return; }
+    const body = new FormData();
+    body.append('_token', CSRF_C);
+    body.append('work_evidence', textarea.value);
+    const files = document.getElementById('mtckd_evidence_files').files;
+    for (let i = 0; i < files.length; i++) body.append('evidence_images[]', files[i]);
+    btn.disabled = true; btn.textContent = 'Completando\u2026';
+    errEl.classList.add('hidden');
+    try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_C }, body });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || json.error || 'Error al completar');
+        _actualizarFilaTicket(_tckModalId);
+        await _cargarModalTicket(_tckModalId);
+        _mtckShowSuccess('\u2713 Ticket marcado como completado.');
+    } catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Marcar como completado'; }
+}
+
+function mtckMostrarCancelar() {
+    document.getElementById('mtckd_cancel_section').classList.toggle('hidden');
+}
+
+async function mtckCancelar() {
+    const btn    = document.getElementById('mtckd_btn_cancel_confirm');
+    const url    = document.getElementById('mtckd_btn_cancel').dataset.url;
+    const reason = document.getElementById('mtckd_cancel_reason_input').value;
+    const errEl  = document.getElementById('mtckd_error_action');
+    const body   = new FormData();
+    body.append('_token', CSRF_C);
+    body.append('cancellation_reason', reason || 'Cancelado por el usuario');
+    btn.disabled = true; btn.textContent = 'Cancelando\u2026';
+    errEl.classList.add('hidden');
+    try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_C }, body });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || json.error || 'Error al cancelar');
+        _actualizarFilaTicket(_tckModalId);
+        await _cargarModalTicket(_tckModalId);
+        _mtckShowSuccess('\u2713 Solicitud cancelada.');
+    } catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Confirmar cancelaci\u00f3n'; }
+}
+
+async function mtckEliminar() {
+    const btn  = document.getElementById('mtckd_btn_delete');
+    const url  = btn.dataset.url;
+    const errEl = document.getElementById('mtckd_error_action');
+    if (!confirm('\u00bfEliminar esta solicitud? Esta acci\u00f3n no se puede deshacer.')) return;
+    btn.disabled = true; btn.textContent = 'Eliminando\u2026';
+    errEl.classList.add('hidden');
+    try {
+        const res = await fetch(url, { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_C } });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || json.error || 'Error al eliminar');
+        cerrarModalTckDetalle();
+        // Remove row from table
+        document.querySelectorAll('[data-ticket-row="' + _tckModalId + '"]').forEach(el => {
+            const row = el.closest('tr'); if (row) row.remove();
+        });
+    } catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Eliminar'; }
+}
+
+async function mtckEncuesta() {
+    const url    = document.getElementById('mtckd_survey_url').value;
+    const comments = document.getElementById('mtckd_survey_comments_input').value;
+    const errEl  = document.getElementById('mtckd_error_action');
+    if (!_mtckSurveyRating) { errEl.textContent = 'Selecciona una calificaci\u00f3n'; errEl.classList.remove('hidden'); return; }
+    const btn  = document.getElementById('mtckd_btn_survey');
+    const body = new FormData();
+    body.append('_token', CSRF_C);
+    body.append('rating', _mtckSurveyRating);
+    body.append('comments', comments);
+    btn.disabled = true; btn.textContent = 'Enviando\u2026';
+    errEl.classList.add('hidden');
+    try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF_C }, body });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.message || json.error || 'Error al enviar');
+        await _cargarModalTicket(_tckModalId);
+        _mtckShowSuccess('\u2713 Encuesta enviada. \u00a1Gracias por tu calificaci\u00f3n!');
+    } catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); btn.disabled = false; btn.textContent = 'Enviar encuesta'; }
+}
+
+function _actualizarFilaTicket(id) {
+    if (!_tckModalData) return;
+    const { ticket } = _tckModalData;
+    document.querySelectorAll('[data-ticket-row="' + id + '"]').forEach(el => {
+        el.className = 'ticket-status-badge inline-flex items-center rounded-lg text-xs font-medium border px-2 py-0.5 ' + ticket.status_badge_class;
+        el.textContent = ticket.status_text;
+    });
+}
 </script>
+
+{{-- ══════════════════════════════════════
+     MODAL: CAMBIAR ESTADO — REQUISICIÓN DE MATERIAL
+══════════════════════════════════════ --}}
+<div id="modalCambiarMat" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white" style="background-color:#0d7a6b;">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <span class="font-semibold text-base">Cambiar estado — Requisición</span>
+            </div>
+            <button onclick="cerrarModalCambiarMat()" class="text-white opacity-70 hover:opacity-100 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="px-6 py-5 space-y-4 overflow-y-auto max-h-[72vh]">
+            {{-- Detalles de la solicitud --}}
+            <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 space-y-2 text-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Detalles de la requisición</p>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                    <div><span class="text-gray-500 font-medium">Folio:</span> <span id="mmat_folio" class="font-mono font-bold text-teal-700"></span></div>
+                    <div><span class="text-gray-500 font-medium">Fecha:</span> <span id="mmat_fecha" class="text-gray-700"></span></div>
+                    <div><span class="text-gray-500 font-medium">Solicitante:</span> <span id="mmat_solicitante" class="text-gray-700"></span></div>
+                    <div><span class="text-gray-500 font-medium">Departamento:</span> <span id="mmat_depto" class="text-gray-700"></span></div>
+                    <div><span class="text-gray-500 font-medium">Código:</span> <span id="mmat_codigo" class="font-mono text-gray-800"></span></div>
+                    <div><span class="text-gray-500 font-medium">Cantidad:</span> <span id="mmat_cantidad" class="font-semibold text-gray-800"></span></div>
+                    <div class="col-span-2"><span class="text-gray-500 font-medium">Descripción:</span> <span id="mmat_desc" class="text-gray-800"></span></div>
+                    <div><span class="text-gray-500 font-medium">Prioridad:</span> <span id="mmat_prioridad" class="text-gray-700"></span></div>
+                    <div class="col-span-2"><span class="text-gray-500 font-medium">DN / NP / Obs:</span> <span id="mmat_obs" class="text-gray-600 italic"></span></div>
+                </div>
+            </div>
+
+            {{-- Estado actual --}}
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-medium text-gray-600">Estado actual:</span>
+                <span id="mmat_badge_actual" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"></span>
+            </div>
+
+            {{-- Nuevo estado --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nuevo estado <span class="text-red-500">*</span></label>
+                <select id="mmat_nuevo_estado"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400">
+                </select>
+                <p class="text-xs text-gray-400 mt-1">Al seleccionar <strong>Entregada</strong> se descontará el inventario automáticamente.</p>
+            </div>
+
+            {{-- Error --}}
+            <p id="mmat_error" class="hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></p>
+
+            {{-- Hidden fields --}}
+            <input type="hidden" id="mmat_url">
+            <input type="hidden" id="mmat_id">
+        </div>
+
+        {{-- Footer --}}
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+            <button type="button" onclick="cerrarModalCambiarMat()"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                Cancelar
+            </button>
+            <button type="button" id="mmat_btn_confirmar" onclick="confirmarCambiarMat()"
+                class="px-5 py-2 text-sm font-semibold text-white rounded-lg transition hover:opacity-90"
+                style="background-color:#0d7a6b;">
+                Confirmar cambio
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- ══════════════════════════════════════
+     MODAL: DETALLE COMPLETO — TICKET / MOVIMIENTO
+══════════════════════════════════════ --}}
+<div id="modalTckDetalle" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[92vh]">
+
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-4 rounded-t-2xl text-white flex-shrink-0" style="background-color:#4A568D;">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="mtckd_code" class="font-mono font-bold text-sm opacity-80"></span>
+                        <span id="mtckd_status_badge" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border"></span>
+                    </div>
+                    <p id="mtckd_title" class="font-semibold text-base leading-snug truncate mt-0.5">Mover pieza</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 ml-3 shrink-0">
+                <a id="mtckd_ext_link" href="#" target="_blank" rel="noopener"
+                   class="text-white opacity-60 hover:opacity-100 transition" title="Abrir en página completa">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                </a>
+                <button onclick="cerrarModalTckDetalle()" class="text-white opacity-70 hover:opacity-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        {{-- Loading --}}
+        <div id="mtckd_loading" class="flex flex-col items-center justify-center py-20 gap-3">
+            <svg class="animate-spin w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span class="text-sm text-gray-500">Cargando solicitud...</span>
+        </div>
+
+        {{-- Error --}}
+        <div id="mtckd_error" class="hidden flex-col items-center justify-center py-16 gap-3 text-center px-6">
+            <svg class="w-12 h-12 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-sm font-medium text-red-600"></p>
+            <button onclick="if(_tckModalId) _cargarModalTicket(_tckModalId)" class="text-sm text-indigo-600 hover:underline">Reintentar</button>
+        </div>
+
+        {{-- Body --}}
+        <div id="mtckd_body" class="hidden overflow-y-auto flex-1 px-6 py-5 space-y-5">
+
+            {{-- Stepper --}}
+            <div class="flex items-center gap-2">
+                <div id="mtckd_step1" class="flex items-center gap-1.5 text-sm font-medium text-teal-600">
+                    <span class="w-6 h-6 rounded-full bg-teal-100 border-2 border-teal-500 flex items-center justify-center shrink-0">
+                        <svg class="w-3.5 h-3.5 text-teal-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span>Creado</span>
+                </div>
+                <div id="mtckd_step_line1" class="flex-1 h-0.5 bg-gray-200 rounded"></div>
+                <div id="mtckd_step2" class="flex items-center gap-1.5 text-sm font-medium text-gray-400">
+                    <span id="mtckd_step2_dot" class="w-6 h-6 rounded-full bg-gray-100 border-2 border-gray-300 flex items-center justify-center shrink-0 text-xs font-bold">2</span>
+                    <span>Asignado</span>
+                    <span id="mtckd_step2_name" class="text-xs font-normal opacity-70"></span>
+                </div>
+                <div id="mtckd_step_line2" class="flex-1 h-0.5 bg-gray-200 rounded"></div>
+                <div id="mtckd_step3" class="flex items-center gap-1.5 text-sm font-medium text-gray-400">
+                    <span id="mtckd_step3_dot" class="w-6 h-6 rounded-full bg-gray-100 border-2 border-gray-300 flex items-center justify-center shrink-0 text-xs font-bold">3</span>
+                    <span id="mtckd_step3_label">Completado</span>
+                </div>
+            </div>
+
+            {{-- Info grid --}}
+            <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Información</p>
+                <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    <div><span class="text-gray-500 text-xs font-medium">Solicitante:</span><br><span id="mtckd_solicitante" class="text-gray-800 font-medium"></span></div>
+                    <div><span class="text-gray-500 text-xs font-medium">Creado el:</span><br><span id="mtckd_fecha_creado" class="text-gray-700"></span></div>
+                    <div class="col-span-2"><span class="text-gray-500 text-xs font-medium">Producto:</span><br><span id="mtckd_producto" class="text-gray-800"></span></div>
+                    <div><span class="text-gray-500 text-xs font-medium">Asignado a:</span><br><span id="mtckd_asignado" class="text-gray-700"></span></div>
+                    <div><span class="text-gray-500 text-xs font-medium">Completado el:</span><br><span id="mtckd_completado" class="text-gray-700"></span></div>
+                </div>
+            </div>
+
+            {{-- Description --}}
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Descripci&oacute;n</p>
+                <p id="mtckd_descripcion" class="text-sm text-gray-700 whitespace-pre-line bg-gray-50 rounded-xl border border-gray-200 px-4 py-3"></p>
+            </div>
+
+            {{-- Solicitud images --}}
+            <div id="mtckd_img_solicitud" class="hidden">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Im&aacute;genes adjuntas</p>
+                <div class="grid grid-cols-4 gap-2"></div>
+            </div>
+
+            {{-- Cancellation block --}}
+            <div id="mtckd_cancel_box" class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-red-400 mb-1.5">Motivo de cancelaci&oacute;n</p>
+                <p id="mtckd_cancel_reason" class="text-sm text-red-700"></p>
+                <p class="text-xs text-red-400 mt-1">Cancelado el: <span id="mtckd_cancelled_at"></span></p>
+            </div>
+
+            {{-- Work evidence --}}
+            <div id="mtckd_evidence_box" class="hidden rounded-xl border border-green-200 bg-green-50 px-4 py-3 space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-wide text-green-600">Trabajo realizado</p>
+                <p id="mtckd_work_evidence" class="text-sm text-green-800 whitespace-pre-line"></p>
+                <div id="mtckd_evidence_images" class="hidden">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-green-500 mb-1.5">Evidencia fotogr&aacute;fica</p>
+                    <div class="grid grid-cols-4 gap-2"></div>
+                </div>
+            </div>
+
+            {{-- Actions section (for gestores/almacenistas) --}}
+            <div id="mtckd_actions" class="hidden space-y-4">
+                <hr class="border-gray-200">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Acciones</p>
+
+                {{-- Action feedback --}}
+                <p id="mtckd_error_action"   class="hidden text-xs text-red-600   bg-red-50   border border-red-200   rounded-lg px-3 py-2"></p>
+                <p id="mtckd_success_action" class="hidden text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2"></p>
+
+                {{-- Assign --}}
+                <div id="mtckd_assign_box" class="hidden rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 space-y-2">
+                    <p class="text-sm font-semibold text-indigo-700">Asignar ticket</p>
+                    <div id="mtckd_assign_select_row" class="hidden">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Almacenista responsable</label>
+                        <select id="mtckd_assign_select"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                        </select>
+                    </div>
+                    <button type="button" id="mtckd_btn_assign" onclick="mtckAsignar()"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg transition hover:opacity-90"
+                        style="background-color:#4A568D;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        Asignar
+                    </button>
+                </div>
+
+                {{-- Complete --}}
+                <div id="mtckd_complete_box" class="hidden rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 space-y-2">
+                    <p class="text-sm font-semibold text-teal-700">Completar ticket</p>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Descripci&oacute;n del trabajo realizado <span class="text-red-500">*</span></label>
+                        <textarea id="mtckd_work_evidence_input" rows="3" maxlength="5000"
+                            placeholder="Describe el trabajo realizado..."
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Im&aacute;genes de evidencia <span class="text-gray-400 font-normal">(opcional, m&aacute;x. 5)</span></label>
+                        <input type="file" id="mtckd_evidence_files" name="evidence_images[]" multiple accept="image/*"
+                            class="w-full text-xs text-gray-600 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-teal-100 file:text-teal-700 hover:file:bg-teal-200">
+                        <div id="mtckd_evidence_preview" class="mt-2 grid grid-cols-5 gap-2 hidden"></div>
+                    </div>
+                    <button type="button" id="mtckd_btn_complete" onclick="mtckCompletar()"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg transition hover:opacity-90"
+                        style="background-color:#0d7a6b;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Marcar como completado
+                    </button>
+                </div>
+            </div>
+
+            {{-- Cancel inline form --}}
+            <div id="mtckd_cancel_section" class="hidden rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 space-y-2">
+                <p class="text-sm font-semibold text-orange-700">Cancelar ticket</p>
+                <textarea id="mtckd_cancel_reason_input" rows="2" maxlength="500"
+                    placeholder="Motivo de cancelaci&oacute;n (opcional)..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
+                <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('mtckd_cancel_section').classList.add('hidden')"
+                        class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                        Volver
+                    </button>
+                    <button type="button" id="mtckd_btn_cancel_confirm" onclick="mtckCancelar()"
+                        class="px-4 py-1.5 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+                        Confirmar cancelaci&oacute;n
+                    </button>
+                </div>
+            </div>
+
+            {{-- Survey form --}}
+            <div id="mtckd_survey_form" class="hidden rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 space-y-3">
+                <p class="text-sm font-semibold text-yellow-700">Encuesta de satisfacci&oacute;n</p>
+                <div>
+                    <p class="text-xs text-gray-600 mb-1.5">¿C&oacute;mo calificar&iacute;as la atenci&oacute;n recibida?</p>
+                    <div class="flex gap-1" id="mtckd_star_row">
+                        <button type="button" class="mtck-star text-gray-300 hover:text-yellow-400 transition" data-val="1" onclick="mtckSetRating(1)">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="mtck-star text-gray-300 hover:text-yellow-400 transition" data-val="2" onclick="mtckSetRating(2)">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="mtck-star text-gray-300 hover:text-yellow-400 transition" data-val="3" onclick="mtckSetRating(3)">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="mtck-star text-gray-300 hover:text-yellow-400 transition" data-val="4" onclick="mtckSetRating(4)">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="mtck-star text-gray-300 hover:text-yellow-400 transition" data-val="5" onclick="mtckSetRating(5)">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Comentarios <span class="text-gray-400 font-normal">(opcional)</span></label>
+                    <textarea id="mtckd_survey_comments_input" rows="2" maxlength="1000"
+                        placeholder="¿Tienes algún comentario adicional?"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"></textarea>
+                </div>
+                <input type="hidden" id="mtckd_survey_url">
+                <button type="button" id="mtckd_btn_survey" onclick="mtckEncuesta()"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 transition">
+                    Enviar encuesta
+                </button>
+            </div>
+
+            {{-- Survey display --}}
+            <div id="mtckd_survey_display" class="hidden rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 space-y-1.5">
+                <p class="text-xs font-semibold uppercase tracking-wide text-yellow-600 mb-1">Encuesta respondida</p>
+                <div class="flex items-center gap-2">
+                    <div id="mtckd_survey_rating_display" class="flex gap-0.5"></div>
+                    <span id="mtckd_survey_rating_text" class="text-sm font-bold text-yellow-700"></span>
+                </div>
+                <p class="text-xs text-gray-500">Respondida el: <span id="mtckd_survey_date"></span></p>
+                <p id="mtckd_survey_comments" class="text-sm text-gray-700 italic"></p>
+            </div>
+
+        </div>{{-- end body --}}
+
+        {{-- Footer --}}
+        <div id="mtckd_footer" class="hidden flex-shrink-0 px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
+            <div class="flex gap-2">
+                <button type="button" id="mtckd_btn_delete" onclick="mtckEliminar()"
+                    class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Eliminar
+                </button>
+                <button type="button" id="mtckd_btn_cancel" onclick="mtckMostrarCancelar()"
+                    class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cancelar solicitud
+                </button>
+            </div>
+            <button type="button" onclick="cerrarModalTckDetalle()"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                Cerrar
+            </button>
+        </div>
+
+    </div>
+</div>
 
 {{-- ══════════════════════════════════════
      MODAL: SOLICITAR PIEZA (visitante)
@@ -1279,6 +1978,13 @@ document.getElementById('sp_buscar_prod').addEventListener('input', function() {
     }, 300);
 });
 
+document.getElementById('modalCambiarMat').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalCambiarMat();
+});
+document.getElementById('modalTckDetalle').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalTckDetalle();
+});
+
 document.getElementById('modalSolicitarPieza').addEventListener('click', function(e) {
     if (e.target === this) cerrarModalSolicitarPieza();
 });
@@ -1358,6 +2064,28 @@ document.getElementById('formMoverPiezaConc').addEventListener('submit', functio
     btn.disabled = true;
     btn.innerHTML = `<svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Enviando...`;
 });
+
+// Preview imágenes de evidencia (completar ticket)
+(function() {
+    const input   = document.getElementById('mtckd_evidence_files');
+    const preview = document.getElementById('mtckd_evidence_preview');
+    input.addEventListener('change', function() {
+        preview.innerHTML = '';
+        const files = Array.from(input.files).slice(0, 5);
+        if (!files.length) { preview.classList.add('hidden'); return; }
+        preview.classList.remove('hidden');
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const div = document.createElement('div');
+                div.className = 'relative rounded-lg overflow-hidden border border-gray-200';
+                div.innerHTML = '<img src="' + e.target.result + '" class="w-full h-16 object-cover">';
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+})();
 
 // Drag & drop imágenes (Mover Pieza)
 (function() {

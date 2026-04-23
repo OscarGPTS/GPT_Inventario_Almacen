@@ -164,6 +164,84 @@ class TicketController extends Controller
     }
 
     /**
+     * JSON endpoint — todos los datos del ticket para el modal en concentrado
+     */
+    public function detalle(Ticket $ticket): \Illuminate\Http\JsonResponse
+    {
+        $user          = Auth::user();
+        $esGestor      = $user->hasRole(['admin', 'admin_almacen']);
+        $esAlmacenista = $user->hasRole(['almacenista', 'admin_almacen']);
+        $esDueno       = $ticket->user_id === $user->id;
+
+        if (!$esGestor && $ticket->user_id !== $user->id && $ticket->assigned_to !== $user->id) {
+            abort(403);
+        }
+
+        $ticket->load(['user', 'assignedTo', 'solicitudImages', 'evidenciaImages', 'producto', 'survey']);
+
+        $almacenUsers = $esGestor
+            ? User::whereHasRole(['almacenista', 'admin_almacen'])->orderBy('name')->get()
+                ->map(fn($u) => ['id' => $u->id, 'name' => $u->name])->values()
+            : [];
+
+        return response()->json([
+            'ticket' => [
+                'id'                  => $ticket->id,
+                'formatted_code'      => $ticket->formatted_code,
+                'title'               => $ticket->title,
+                'description'         => $ticket->description,
+                'status'              => $ticket->status,
+                'status_text'         => $ticket->status_text,
+                'status_badge_class'  => $ticket->status_badge_class,
+                'created_at'          => $ticket->created_at->format('d/m/Y H:i'),
+                'assigned_at'         => $ticket->assigned_at?->format('d/m/Y H:i'),
+                'completed_at'        => $ticket->completed_at?->format('d/m/Y H:i'),
+                'cancelled_at'        => $ticket->cancelled_at?->format('d/m/Y H:i'),
+                'work_evidence'       => $ticket->work_evidence,
+                'cancellation_reason' => $ticket->cancellation_reason,
+                'user'                => $ticket->user
+                    ? ['id' => $ticket->user->id, 'name' => $ticket->user->name] : null,
+                'assignedTo'          => $ticket->assignedTo
+                    ? ['id' => $ticket->assignedTo->id, 'name' => $ticket->assignedTo->name] : null,
+                'producto'            => $ticket->producto ? [
+                    'id'          => $ticket->producto->id,
+                    'codigo'      => $ticket->producto->codigo,
+                    'descripcion' => $ticket->producto->descripcion,
+                ] : null,
+                'solicitudImages' => $ticket->solicitudImages
+                    ->map(fn($img) => ['url' => $img->url, 'original_name' => $img->original_name])
+                    ->values(),
+                'evidenciaImages' => $ticket->evidenciaImages
+                    ->map(fn($img) => ['url' => $img->url, 'original_name' => $img->original_name])
+                    ->values(),
+                'survey' => $ticket->survey ? [
+                    'rating'       => $ticket->survey->rating,
+                    'comments'     => $ticket->survey->comments,
+                    'completed_at' => $ticket->survey->completed_at?->format('d/m/Y H:i'),
+                ] : null,
+            ],
+            'permissions' => [
+                'esDueno'       => $esDueno,
+                'esGestor'      => $esGestor,
+                'esAlmacenista' => $esAlmacenista,
+                'canDelete'     => $esDueno && $ticket->isPendiente(),
+                'canCancel'     => ($esDueno || $esGestor) && $ticket->canBeCancelled(),
+            ],
+            'almacenUsers' => $almacenUsers,
+            'urls' => [
+                'assign'   => route('tickets.assign',   $ticket),
+                'complete' => route('tickets.complete', $ticket),
+                'cancel'   => route('tickets.cancel',   $ticket),
+                'survey'   => route('tickets.survey',   $ticket),
+                'destroy'  => route('tickets.destroy',  $ticket),
+                'show'     => route('tickets.show',     $ticket),
+                'producto' => $ticket->producto
+                    ? route('productos.show', $ticket->producto_id) : null,
+            ],
+        ]);
+    }
+
+    /**
      * Asignar ticket a un almacenista
      */
     public function assign(Request $request, Ticket $ticket)
@@ -176,6 +254,9 @@ class TicketController extends Controller
         }
 
         if (in_array($ticket->status, ['finalizado', 'cancelado'])) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'error' => 'Este ticket ya no puede asignarse.'], 422);
+            }
             return back()->with('error', 'Este ticket ya no puede asignarse.');
         }
 
@@ -192,6 +273,9 @@ class TicketController extends Controller
         $ticket->load(['user', 'producto']);
         Mail::to($ticket->user->email)->send(new TicketAssignedMail($ticket));
 
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Ticket asignado a ' . $assignee->name]);
+        }
         return back()->with('success', 'Ticket asignado a ' . $assignee->name);
     }
 
@@ -207,6 +291,9 @@ class TicketController extends Controller
         }
 
         if (in_array($ticket->status, ['finalizado', 'cancelado'])) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'error' => 'Este ticket ya fue cerrado.'], 422);
+            }
             return back()->with('error', 'Este ticket ya fue cerrado.');
         }
 
@@ -259,10 +346,16 @@ class TicketController extends Controller
             $ticket->load(['user', 'assignedTo', 'producto']);
             Mail::to($ticket->user->email)->send(new TicketCompletedMail($ticket));
 
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => true, 'message' => 'Ticket completado exitosamente.']);
+            }
             return redirect()->route('tickets.show', $ticket)
                 ->with('success', 'Ticket completado exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'error' => 'Error al completar el ticket.'], 500);
+            }
             return back()->with('error', 'Error al completar el ticket.');
         }
     }
@@ -307,6 +400,9 @@ class TicketController extends Controller
             Mail::to($admin->email)->send(new TicketSurveyMail($ticket, $request->rating, $request->comments));
         }
 
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Gracias por tu retroalimentación.']);
+        }
         return back()->with('success', 'Gracias por tu retroalimentación.');
     }
 
@@ -361,6 +457,9 @@ class TicketController extends Controller
         }
 
         if (!$ticket->canBeCancelled()) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'error' => 'Este ticket no puede cancelarse en su estado actual.'], 422);
+            }
             return back()->with('error', 'Este ticket no puede cancelarse en su estado actual.');
         }
 
@@ -370,6 +469,9 @@ class TicketController extends Controller
 
         $ticket->cancel($request->cancellation_reason ?: 'Cancelado por el usuario');
 
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Ticket cancelado.']);
+        }
         return redirect()->route('solicitudes.concentrado', ['tab' => 'movimiento'])
             ->with('success', 'Ticket cancelado.');
     }
@@ -389,6 +491,9 @@ class TicketController extends Controller
 
         $ticket->delete();
 
+        if (request()->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Solicitud eliminada.']);
+        }
         return redirect()->route('solicitudes.concentrado', ['tab' => 'movimiento'])
             ->with('success', 'Solicitud eliminada.');
     }
