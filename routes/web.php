@@ -13,6 +13,7 @@ use App\Http\Controllers\UsuariosController;
 use App\Http\Controllers\NoConformidadController;
 use App\Http\Controllers\NotificacionesController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\InspeccionIngresoController;
 
 use App\Http\Middleware\SoloAdmin;
 
@@ -113,6 +114,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets/{ticket}/update-producto', [TicketController::class, 'updateProducto'])->name('tickets.updateProducto');
     Route::post('/tickets/{ticket}/encuesta', [TicketController::class, 'survey'])->name('tickets.survey');
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+
+    // Inspecciones de Ingreso (rol calidad + admin)
+    Route::get('/inspecciones', [InspeccionIngresoController::class, 'index'])->name('inspecciones.index');
+    Route::get('/inspecciones/crear', [InspeccionIngresoController::class, 'create'])->name('inspecciones.create');
+    Route::post('/inspecciones', [InspeccionIngresoController::class, 'store'])->name('inspecciones.store');
+    Route::get('/inspecciones/{inspeccion}', [InspeccionIngresoController::class, 'show'])->name('inspecciones.show');
+    Route::get('/inspecciones/{inspeccion}/editar', [InspeccionIngresoController::class, 'edit'])->name('inspecciones.edit');
+    Route::put('/inspecciones/{inspeccion}', [InspeccionIngresoController::class, 'update'])->name('inspecciones.update');
+    Route::delete('/inspecciones/{inspeccion}', [InspeccionIngresoController::class, 'destroy'])->name('inspecciones.destroy');
 
     // Notificaciones web
     Route::get('/notificaciones', [NotificacionesController::class, 'index'])->name('notificaciones.index');

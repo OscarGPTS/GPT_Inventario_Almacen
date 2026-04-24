@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.\\(blade\\\\.php|php\\)$\")"
+      "Bash(grep -E \"\\\\.\\(blade\\\\.php|php\\)$\")",
+      "Bash(php artisan *)",
+      "Bash(php -r \"require 'vendor/autoload.php'; echo 'OK';\")"
     ]
   }
 }

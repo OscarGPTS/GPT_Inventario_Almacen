@@ -49,7 +49,11 @@ class GoogleController extends Controller
 
             Auth::login($user);
 
-            $destino = $user->hasRole('visitante') ? route('reportes.entradas') : '/dashboard';
+            $destino = match(true) {
+                $user->hasRole('visitante') => route('reportes.entradas'),
+                $user->hasRole('calidad')   => route('inspecciones.index'),
+                default                     => '/dashboard',
+            };
             return redirect()->intended($destino);
         } catch (\Exception $e) {
             return redirect('/')->with('error', 'Error al autenticar con Google: ' . $e->getMessage());

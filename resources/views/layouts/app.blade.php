@@ -9,7 +9,11 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
     @auth
-    @php $esVisitante = auth()->user()->hasRole('visitante'); @endphp
+    @php
+        $esVisitante = auth()->user()->hasRole('visitante');
+        $esCalidad   = auth()->user()->hasRole('calidad');
+        $esRestringido = $esVisitante || $esCalidad;
+    @endphp
     <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
         <div class="w-full px-4 sm:px-6">
             <div class="flex justify-between items-center" style="height:56px;">
@@ -27,7 +31,7 @@
 
                 {{-- Links principales (Desktop) --}}
                 <div class="hidden lg:flex items-center gap-1 ml-2 flex-1 overflow-x-auto">
-                    @if(!$esVisitante)
+                    @if(!$esRestringido)
                     <a href="{{ route('dashboard') }}"
                        class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('dashboard') ? 'bg-gray-100 text-gray-900' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,7 +54,16 @@
                         </svg>
                         Solicitudes
                     </a>
-                    @if(!$esVisitante)
+                    @if($esCalidad || !$esRestringido)
+                    <a href="{{ route('inspecciones.index') }}"
+                       class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('inspecciones.*') ? 'bg-gray-100 text-gray-900' : '' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        Inspecciones
+                    </a>
+                    @endif
+                    @if(!$esRestringido)
                     <a href="{{ route('reportes.no_conforme') }}"
                        class="flex items-center gap-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 px-3 py-1.5 rounded-md text-sm font-medium transition whitespace-nowrap {{ request()->routeIs('reportes.no_conforme') ? 'bg-gray-100 text-gray-900' : '' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +142,17 @@
                             </svg>
                             Solicitudes
                         </a>
-                        @if(!$esVisitante)
+                        @if($esCalidad || !$esRestringido)
+                        <a href="{{ route('inspecciones.index') }}"
+                           class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('inspecciones.*') ? 'bg-indigo-50 font-medium' : '' }}"
+                           style="{{ request()->routeIs('inspecciones.*') ? 'color:#4A568D;' : '' }}">
+                            <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                            Inspecciones
+                        </a>
+                        @endif
+                        @if(!$esRestringido)
                         <a href="{{ route('reportes.no_conforme') }}"
                            class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition {{ request()->routeIs('reportes.no_conforme') ? 'bg-indigo-50 font-medium' : '' }}"
                            style="{{ request()->routeIs('reportes.no_conforme') ? 'color:#4A568D;' : '' }}">
