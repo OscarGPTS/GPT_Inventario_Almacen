@@ -63,7 +63,26 @@
                     Registrado el {{ $inspeccion->created_at->format('d/m/Y H:i') }}
                     por <span class="font-medium text-gray-700">{{ $inspeccion->registradoPor?->name ?? '—' }}</span>
                 </p>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
+                    {{-- Descargar Excel --}}
+                    <a href="{{ route('inspecciones.excel', $inspeccion) }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Excel
+                    </a>
+                    {{-- Descargar PDF --}}
+                    <a href="{{ route('inspecciones.pdf', $inspeccion) }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        PDF
+                    </a>
+                    {{-- Editar --}}
                     <a href="{{ route('inspecciones.edit', $inspeccion) }}"
                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,6 +90,7 @@
                         </svg>
                         Editar
                     </a>
+                    {{-- Eliminar --}}
                     <form action="{{ route('inspecciones.destroy', $inspeccion) }}" method="POST"
                           onsubmit="return confirm('¿Eliminar la inspección {{ $inspeccion->folio }}?')">
                         @csrf @method('DELETE')

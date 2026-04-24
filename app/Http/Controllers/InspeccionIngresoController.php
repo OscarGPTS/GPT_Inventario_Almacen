@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\InspeccionIngresoExport;
 use App\Models\InspeccionIngreso;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InspeccionIngresoController extends Controller
 {
@@ -118,5 +121,23 @@ class InspeccionIngresoController extends Controller
 
         return redirect()->route('inspecciones.index')
             ->with('success', 'Inspección ' . $folio . ' eliminada.');
+    }
+
+    public function descargarExcel(InspeccionIngreso $inspeccion)
+    {
+        $filename = 'Inspeccion-' . $inspeccion->folio . '.xlsx';
+        return Excel::download(new InspeccionIngresoExport($inspeccion), $filename);
+    }
+
+    public function descargarPdf(InspeccionIngreso $inspeccion)
+    {
+        $pdf = Pdf::loadView('inspecciones.pdf', compact('inspeccion'))
+            ->setPaper('letter', 'portrait')
+            ->setOption('dpi', 150)
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', false);
+
+        $filename = 'Inspeccion-' . $inspeccion->folio . '.pdf';
+        return $pdf->download($filename);
     }
 }

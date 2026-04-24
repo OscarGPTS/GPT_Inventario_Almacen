@@ -123,6 +123,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/inspecciones/{inspeccion}/editar', [InspeccionIngresoController::class, 'edit'])->name('inspecciones.edit');
     Route::put('/inspecciones/{inspeccion}', [InspeccionIngresoController::class, 'update'])->name('inspecciones.update');
     Route::delete('/inspecciones/{inspeccion}', [InspeccionIngresoController::class, 'destroy'])->name('inspecciones.destroy');
+    Route::get('/inspecciones/{inspeccion}/excel', [InspeccionIngresoController::class, 'descargarExcel'])->name('inspecciones.excel');
+    Route::get('/inspecciones/{inspeccion}/pdf', [InspeccionIngresoController::class, 'descargarPdf'])->name('inspecciones.pdf');
 
     // Notificaciones web
     Route::get('/notificaciones', [NotificacionesController::class, 'index'])->name('notificaciones.index');

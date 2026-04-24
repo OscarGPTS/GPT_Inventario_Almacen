@@ -3,7 +3,13 @@
     "allow": [
       "Bash(grep -E \"\\\\.\\(blade\\\\.php|php\\)$\")",
       "Bash(php artisan *)",
-      "Bash(php -r \"require 'vendor/autoload.php'; echo 'OK';\")"
+      "Bash(php -r \"require 'vendor/autoload.php'; echo 'OK';\")",
+      "Bash(php -r \"echo class_exists\\('Barryvdh\\\\DomPDF\\\\PDF'\\) ? 'dompdf ok' : 'no dompdf';\")",
+      "Bash(php -r \"echo class_exists\\('PhpOffice\\\\PhpSpreadsheet\\\\Spreadsheet'\\) ? 'phpspreadsheet ok' : 'no phpspreadsheet';\")",
+      "Bash(composer require *)",
+      "Bash(php -r \"echo class_exists\\('Barryvdh\\\\DomPDF\\\\Facade\\\\Pdf'\\) ? 'dompdf OK' : 'not yet';\")",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(php -r ' *)"
     ]
   }
 }
