@@ -4,7 +4,7 @@
 
 @section('content')
 @php $acento = '#4A568D'; @endphp
-<div class="space-y-4 max-w-5xl mx-auto">
+<div class="space-y-4">
 
     {{-- Breadcrumb --}}
     <div class="flex items-center gap-2 text-sm text-gray-500">
@@ -31,9 +31,20 @@
     </div>
     @endif
 
+    {{-- Banner calidad pendiente --}}
+    @if($inspeccion->requiere_ctrl_calidad && !$inspeccion->resultado_calidad)
+    <div class="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+        <svg class="w-5 h-5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <span><strong>Pendiente:</strong> Esta inspección requiere que el equipo de Control de Calidad complete la Fase 2.</span>
+    </div>
+    @endif
+
     <form action="{{ route('inspecciones.update', $inspeccion) }}" method="POST">
         @csrf
         @method('PUT')
+        <input type="hidden" name="articulo_id" value="{{ $inspeccion->articulo_id }}">
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
 
@@ -69,26 +80,26 @@
             <div class="p-5 space-y-5">
 
                 {{-- Fila datos generales --}}
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div class="w-44 shrink-0">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fecha de recepción</label>
                         <input type="date" name="fecha_recepcion"
                                value="{{ old('fecha_recepcion', $inspeccion->fecha_recepcion?->format('Y-m-d')) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition">
                     </div>
-                    <div>
+                    <div class="flex-1 min-w-36">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Requisición</label>
                         <input type="text" name="requisicion"
                                value="{{ old('requisicion', $inspeccion->requisicion) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition">
                     </div>
-                    <div>
+                    <div class="flex-1 min-w-36">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">O.C.</label>
                         <input type="text" name="orden_compra"
                                value="{{ old('orden_compra', $inspeccion->orden_compra) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition">
                     </div>
-                    <div class="md:col-span-2">
+                    <div class="flex-[2] min-w-64">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">DN / NP / CP / Otro</label>
                         <div class="flex gap-2">
                             <select name="tipo_documento" id="tipo_documento"
@@ -111,53 +122,76 @@
                     </div>
                 </div>
 
+                {{-- Artículo vinculado --}}
+                @if($inspeccion->articulo)
+                <div class="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-xl text-sm">
+                    <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+                    </svg>
+                    <span class="text-indigo-700 font-medium text-xs">Artículo vinculado:</span>
+                    <span class="font-mono text-indigo-900 font-semibold text-xs">{{ $inspeccion->articulo->codigo }}</span>
+                    <span class="text-indigo-600 text-xs truncate">— {{ $inspeccion->articulo->descripcion }}</span>
+                </div>
+                @endif
+
                 {{-- Cabeceras columnas --}}
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="rounded-t-lg py-2 px-4 text-center text-sm font-bold text-white" style="background-color:#3A8FC0;">Solicitante</div>
+                    <div class="rounded-t-lg py-2 px-4 text-center text-sm font-bold text-white flex items-center justify-center gap-2" style="background-color:#3A8FC0;">
+                        Solicitante
+                        <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    @if($inspeccion->requiere_ctrl_calidad)
                     <div class="rounded-t-lg py-2 px-4 text-center text-sm font-bold text-white" style="background-color:#4E8030;">Control de Calidad</div>
+                    @else
+                    <div class="rounded-t-lg py-2 px-4 text-center text-sm font-bold text-white flex items-center justify-center gap-2" style="background-color:#6b7280;">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        Control de Calidad
+                    </div>
+                    @endif
                 </div>
 
                 {{-- Dos columnas --}}
                 <div class="grid grid-cols-2 gap-4 -mt-2">
 
-                    {{-- Solicitante --}}
-                    <div class="border border-gray-200 rounded-b-xl rounded-tr-xl p-4 space-y-3" style="background-color:#EBF5FB;">
+                    {{-- Solicitante — readonly, solo lectura --}}
+                    <div class="border border-gray-200 rounded-b-xl rounded-tr-xl p-4 space-y-3 bg-gray-50">
+                        <p class="flex items-center gap-1.5 text-xs text-gray-400 font-medium mb-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Solo lectura — completado por el solicitante
+                        </p>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fecha de inspección</label>
-                            <input type="date" name="fecha_inspeccion_solicitante"
+                            <input type="date" name="fecha_inspeccion_solicitante" readonly
                                    value="{{ old('fecha_inspeccion_solicitante', $inspeccion->fecha_inspeccion_solicitante?->format('Y-m-d')) }}"
-                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                Inspeccionó (Nombre)
-                                <span id="ac-loading-sol" class="hidden ml-1 text-blue-400 font-normal normal-case">cargando…</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text" id="nombre-sol" name="inspeccionado_solicitante"
-                                       value="{{ old('inspeccionado_solicitante', $inspeccion->inspeccionado_solicitante) }}"
-                                       placeholder="Escriba para buscar empleado…"
-                                       autocomplete="off"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                                <div id="dropdown-sol"
-                                     class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-52 overflow-y-auto"></div>
-                            </div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Inspeccionó (Nombre)</label>
+                            <input type="text" name="inspeccionado_solicitante" readonly
+                                   value="{{ old('inspeccionado_solicitante', $inspeccion->inspeccionado_solicitante) }}"
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Departamento</label>
-                            <input type="text" id="depto-sol" name="departamento_solicitante"
+                            <input type="text" name="departamento_solicitante" readonly
                                    value="{{ old('departamento_solicitante', $inspeccion->departamento_solicitante) }}"
-                                   placeholder="Se llena al seleccionar nombre"
-                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Observaciones</label>
-                            <textarea name="observaciones_solicitante" rows="3"
-                                      class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition resize-none">{{ old('observaciones_solicitante', $inspeccion->observaciones_solicitante) }}</textarea>
+                            <textarea name="observaciones_solicitante" rows="3" readonly
+                                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none resize-none">{{ old('observaciones_solicitante', $inspeccion->observaciones_solicitante) }}</textarea>
                         </div>
                     </div>
 
-                    {{-- Calidad --}}
+                    {{-- Calidad — condicional --}}
+                    @if($inspeccion->requiere_ctrl_calidad)
                     <div class="border border-gray-200 rounded-b-xl rounded-tl-xl p-4 space-y-3" style="background-color:#EBF5EB;">
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fecha de inspección</label>
@@ -193,12 +227,21 @@
                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition resize-none">{{ old('observaciones_calidad', $inspeccion->observaciones_calidad) }}</textarea>
                         </div>
                     </div>
+                    @else
+                    <div class="border border-dashed border-gray-300 rounded-b-xl rounded-tl-xl p-6 flex flex-col items-center justify-center gap-3 bg-gray-50 text-center">
+                        <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <p class="text-sm font-semibold text-gray-400">No requiere Control de Calidad</p>
+                    </div>
+                    @endif
                 </div>
 
                 {{-- Sección inferior --}}
                 <div class="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-4">
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
+                        {{-- Requiere Ctrl. Calidad --}}
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Requiere Ctrl. Calidad</label>
                             <div class="flex gap-3">
@@ -216,13 +259,20 @@
                                 </label>
                             </div>
                         </div>
+
+                        {{-- No. Solicitud — solo visible cuando requiere calidad --}}
+                        @if($inspeccion->requiere_ctrl_calidad)
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">No. Solicitud</label>
                             <input type="text" name="no_solicitud"
                                    value="{{ old('no_solicitud', $inspeccion->no_solicitud) }}"
+                                   placeholder="Número de solicitud"
                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition">
                         </div>
-                        <div class="md:col-span-2">
+                        @endif
+
+                        {{-- Fecha ingreso inventario --}}
+                        <div class="{{ $inspeccion->requiere_ctrl_calidad ? 'md:col-span-2' : 'md:col-span-3' }}">
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Fecha de ingreso a inventario</label>
                             <input type="date" name="fecha_ingreso_inventario"
                                    value="{{ old('fecha_ingreso_inventario', $inspeccion->fecha_ingreso_inventario?->format('Y-m-d')) }}"
@@ -231,13 +281,11 @@
                     </div>
 
                     {{-- Resultados --}}
-                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200">
-                        @foreach([
-                            ['Resultado — Solicitante', 'resultado_solicitante', old('resultado_solicitante', $inspeccion->resultado_solicitante)],
-                            ['Resultado — Calidad',     'resultado_calidad',     old('resultado_calidad',     $inspeccion->resultado_calidad)],
-                        ] as [$titulo, $campo, $actual])
+                    <div class="grid {{ $inspeccion->requiere_ctrl_calidad ? 'grid-cols-2' : 'grid-cols-1' }} gap-4 pt-2 border-t border-gray-200">
+
+                        {{-- Resultado Solicitante --}}
                         <div>
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 text-center">{{ $titulo }}</p>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 text-center">Resultado — Solicitante</p>
                             <div class="flex gap-3 justify-center">
                                 @foreach([
                                     'no_conforme' => ['No Conforme', 'bg-red-500',   'ring-red-400'],
@@ -245,8 +293,8 @@
                                     'a_revision'  => ['A Revisión',  'bg-yellow-400','ring-yellow-400'],
                                 ] as $val => [$label, $bg, $ring])
                                 <label class="flex flex-col items-center gap-1.5 cursor-pointer group">
-                                    <input type="radio" name="{{ $campo }}" value="{{ $val }}"
-                                           {{ $actual === $val ? 'checked' : '' }}
+                                    <input type="radio" name="resultado_solicitante" value="{{ $val }}"
+                                           {{ old('resultado_solicitante', $inspeccion->resultado_solicitante) === $val ? 'checked' : '' }}
                                            class="sr-only peer">
                                     <span class="w-20 h-8 rounded-lg {{ $bg }} opacity-30 peer-checked:opacity-100 peer-checked:ring-2 peer-checked:{{ $ring }} peer-checked:ring-offset-1 transition-all group-hover:opacity-60"></span>
                                     <span class="text-xs text-gray-500 peer-checked:font-semibold peer-checked:text-gray-800 transition">{{ $label }}</span>
@@ -254,7 +302,28 @@
                                 @endforeach
                             </div>
                         </div>
-                        @endforeach
+
+                        {{-- Resultado Calidad — solo si requiere --}}
+                        @if($inspeccion->requiere_ctrl_calidad)
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 text-center">Resultado — Calidad</p>
+                            <div class="flex gap-3 justify-center">
+                                @foreach([
+                                    'no_conforme' => ['No Conforme', 'bg-red-500',   'ring-red-400'],
+                                    'conforme'    => ['Conforme',    'bg-green-600', 'ring-green-400'],
+                                    'a_revision'  => ['A Revisión',  'bg-yellow-400','ring-yellow-400'],
+                                ] as $val => [$label, $bg, $ring])
+                                <label class="flex flex-col items-center gap-1.5 cursor-pointer group">
+                                    <input type="radio" name="resultado_calidad" value="{{ $val }}"
+                                           {{ old('resultado_calidad', $inspeccion->resultado_calidad) === $val ? 'checked' : '' }}
+                                           class="sr-only peer">
+                                    <span class="w-20 h-8 rounded-lg {{ $bg }} opacity-30 peer-checked:opacity-100 peer-checked:ring-2 peer-checked:{{ $ring }} peer-checked:ring-offset-1 transition-all group-hover:opacity-60"></span>
+                                    <span class="text-xs text-gray-500 peer-checked:font-semibold peer-checked:text-gray-800 transition">{{ $label }}</span>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -277,7 +346,6 @@
 </div>
 
 <script>
-// ── Tipo documento ─────────────────────────────────────────
 function toggleOtro() {
     const sel   = document.getElementById('tipo_documento');
     const input = document.getElementById('tipo_documento_otro');
@@ -286,7 +354,6 @@ function toggleOtro() {
     if (!show) input.value = '';
 }
 
-// ── Autocomplete empleados RH ───────────────────────────────
 let _empleados = null;
 let _cargando  = false;
 
@@ -294,7 +361,6 @@ async function cargarEmpleados() {
     if (_empleados !== null || _cargando) return;
     _cargando = true;
     document.querySelectorAll('[id^="ac-loading-"]').forEach(el => el.classList.remove('hidden'));
-
     try {
         const res  = await fetch('{{ route("inspecciones.empleados_rh") }}');
         _empleados = res.ok ? await res.json() : [];
@@ -309,7 +375,6 @@ async function cargarEmpleados() {
 function renderDropdown(dropdownId, matches, inputId, deptoId) {
     const dd = document.getElementById(dropdownId);
     if (!matches.length) { dd.classList.add('hidden'); return; }
-
     dd.innerHTML = matches.map(e => {
         const nombre = e.nombre.replace(/"/g, '&quot;');
         const depto  = (e.departamento || '').replace(/"/g, '&quot;');
@@ -320,7 +385,6 @@ function renderDropdown(dropdownId, matches, inputId, deptoId) {
                     <p class="text-xs text-gray-400 mt-0.5">${e.departamento || '—'}</p>
                 </div>`;
     }).join('');
-
     dd.classList.remove('hidden');
 }
 
@@ -333,32 +397,21 @@ function seleccionarEmpleado(inputId, deptoId, dropdownId, el) {
 function initAutocomplete(inputId, deptoId, dropdownId) {
     const input    = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
-
+    if (!input) return;
     input.addEventListener('focus', cargarEmpleados);
-
     input.addEventListener('input', function () {
         if (_empleados === null) { cargarEmpleados(); return; }
-
         const q = this.value.trim().toLowerCase();
         if (q.length < 2) { dropdown.classList.add('hidden'); return; }
-
-        const matches = _empleados
-            .filter(e => e.nombre.toLowerCase().includes(q))
-            .slice(0, 10);
-
+        const matches = _empleados.filter(e => e.nombre.toLowerCase().includes(q)).slice(0, 10);
         renderDropdown(dropdownId, matches, inputId, deptoId);
     });
-
-    input.addEventListener('blur', () => {
-        setTimeout(() => dropdown.classList.add('hidden'), 180);
-    });
-
+    input.addEventListener('blur', () => setTimeout(() => dropdown.classList.add('hidden'), 180));
     input.addEventListener('keydown', function (e) {
         const items = dropdown.querySelectorAll('[data-nombre]');
         if (!items.length) return;
         const active = dropdown.querySelector('.bg-indigo-100');
         let idx = active ? [...items].indexOf(active) : -1;
-
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             if (active) active.classList.replace('bg-indigo-100', 'hover:bg-indigo-50');
@@ -381,7 +434,6 @@ function initAutocomplete(inputId, deptoId, dropdownId) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initAutocomplete('nombre-sol', 'depto-sol', 'dropdown-sol');
     initAutocomplete('nombre-cal', 'depto-cal', 'dropdown-cal');
 });
 </script>

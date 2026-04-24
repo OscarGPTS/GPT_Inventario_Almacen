@@ -10,6 +10,7 @@ class InspeccionIngreso extends Model
 
     protected $fillable = [
         'folio',
+        'articulo_id',
         'fecha_recepcion',
         'requisicion',
         'orden_compra',
@@ -43,6 +44,37 @@ class InspeccionIngreso extends Model
     const RESULTADO_NO_CONFORME = 'no_conforme';
     const RESULTADO_CONFORME    = 'conforme';
     const RESULTADO_A_REVISION  = 'a_revision';
+
+    public function getEstadoAttribute(): string
+    {
+        if (!$this->requiere_ctrl_calidad) return 'sin_calidad';
+        return $this->resultado_calidad ? 'completado' : 'pendiente_calidad';
+    }
+
+    public function getEstadoTextoAttribute(): string
+    {
+        return match ($this->estado) {
+            'sin_calidad'       => 'Sin Calidad',
+            'pendiente_calidad' => 'Pendiente Calidad',
+            'completado'        => 'Completado',
+            default             => '—',
+        };
+    }
+
+    public function getEstadoBadgeClassAttribute(): string
+    {
+        return match ($this->estado) {
+            'sin_calidad'       => 'bg-gray-100 text-gray-600 border border-gray-200',
+            'pendiente_calidad' => 'bg-amber-100 text-amber-800 border border-amber-200',
+            'completado'        => 'bg-green-100 text-green-800 border border-green-200',
+            default             => 'bg-gray-100 text-gray-600 border border-gray-200',
+        };
+    }
+
+    public function articulo()
+    {
+        return $this->belongsTo(\App\Models\Producto::class, 'articulo_id');
+    }
 
     public function registradoPor()
     {

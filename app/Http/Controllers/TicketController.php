@@ -11,6 +11,7 @@ use App\Models\Solicitud;
 use App\Models\Departamento;
 use App\Models\UnidadMedida;
 use App\Models\Movimiento;
+use App\Models\InspeccionIngreso;
 use App\Mail\TicketCreatedMail;
 use App\Mail\TicketAssignedMail;
 use App\Mail\TicketCompletedMail;
@@ -573,6 +574,12 @@ class TicketController extends Controller
                 'finalizado' => (clone $baseTck)->where('status', 'finalizado')->count(),
                 'cancelado'  => (clone $baseTck)->where('status', 'cancelado')->count(),
             ],
+            'insp' => [
+                'total'             => ($baseInsp = $esGestor ? InspeccionIngreso::query() : InspeccionIngreso::where('registrado_por', $user->id))->count(),
+                'sin_calidad'       => (clone $baseInsp)->where('requiere_ctrl_calidad', false)->count(),
+                'pendiente_calidad' => (clone $baseInsp)->where('requiere_ctrl_calidad', true)->whereNull('resultado_calidad')->count(),
+                'completado'        => (clone $baseInsp)->where('requiere_ctrl_calidad', true)->whereNotNull('resultado_calidad')->count(),
+            ],
         ];
 
         // ── Solicitudes de Material ──────────────────────────────────────────
@@ -637,9 +644,33 @@ class TicketController extends Controller
             ? User::whereHasRole(['almacenista', 'admin_almacen'])->orderBy('name')->get()
             : null;
 
+        // ── Inspecciones de Ingreso ──────────────────────────────────────────
+        $inspecciones   = null;
+        $recentInsp     = null;
+
+        $buildInspQ = function () use ($user, $esGestor, $search) {
+            $q = InspeccionIngreso::with(['registradoPor', 'articulo'])->latest();
+            if (!$esGestor) $q->where('registrado_por', $user->id);
+            if ($search) {
+                $s = $search;
+                $q->where(function ($sq) use ($s) {
+                    $sq->where('folio', 'like', "%{$s}%")
+                       ->orWhere('requisicion', 'like', "%{$s}%")
+                       ->orWhere('orden_compra', 'like', "%{$s}%");
+                });
+            }
+            return $q;
+        };
+
+        if ($tab === 'inspeccion') {
+            $inspecciones = $buildInspQ()->paginate(20)->appends($request->except('page'));
+        } else {
+            $recentInsp = $buildInspQ()->paginate(5, ['*'], 'page_insp')->appends($request->except('page_insp'));
+        }
+
         return view('solicitudes.concentrado', compact(
-            'solicitudes', 'tickets', 'stats', 'tab', 'esGestor', 'almacenUsers',
-            'recentSol', 'recentTck', 'departamentos', 'unidadesMedida', 'search'
+            'solicitudes', 'tickets', 'inspecciones', 'stats', 'tab', 'esGestor', 'almacenUsers',
+            'recentSol', 'recentTck', 'recentInsp', 'departamentos', 'unidadesMedida', 'search'
         ));
     }
 }

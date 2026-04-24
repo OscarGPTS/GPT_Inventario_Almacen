@@ -144,9 +144,10 @@
         {{-- Tabs --}}
         <div class="flex border-b border-gray-200 overflow-x-auto">
             @foreach([
-                ['key'=>'todos',      'label'=>'Todos', 'total'=>$stats['sol']['total']+$stats['tck']['total']],
-                ['key'=>'material',   'label'=>'Req. Material',    'total'=>$stats['sol']['total']],
-                ['key'=>'movimiento', 'label'=>'Sol. Movimiento',  'total'=>$stats['tck']['total']],
+                ['key'=>'todos',       'label'=>'Todos',           'total'=>$stats['sol']['total']+$stats['tck']['total']],
+                ['key'=>'material',    'label'=>'Req. Material',   'total'=>$stats['sol']['total']],
+                ['key'=>'movimiento',  'label'=>'Sol. Movimiento', 'total'=>$stats['tck']['total']],
+                ['key'=>'inspeccion',  'label'=>'Inspecciones',    'total'=>$stats['insp']['total']],
             ] as $t)
             <a href="{{ $tabUrl($t['key']) }}"
                class="flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition
@@ -351,6 +352,67 @@
         </div>
         @endif
     </div>
+
+    {{-- Inspecciones recientes en Todos --}}
+    @if($stats['insp']['total'] > 0)
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                <span class="font-semibold text-sm text-gray-700">Inspecciones de Ingreso</span>
+                <span class="text-xs text-gray-400">({{ $recentInsp->total() }} total)</span>
+            </div>
+            <a href="{{ $tabUrl('inspeccion') }}" class="text-xs font-medium hover:underline" style="color:{{ $acento }}">Ver todas &rarr;</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs border-collapse" style="min-width:620px;">
+                <thead>
+                    <tr style="background-color:{{ $acento }};" class="text-white">
+                        <th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Folio</th>
+                        <th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Recepción</th>
+                        <th class="px-3 py-2 text-left font-semibold uppercase tracking-wide">Artículo</th>
+                        <th class="px-3 py-2 text-center font-semibold uppercase tracking-wide whitespace-nowrap">Estado</th>
+                        <th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Fecha</th>
+                        <th class="px-3 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($recentInsp as $insp)
+                    <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-indigo-50 transition-colors">
+                        <td class="px-3 py-2 font-mono font-bold whitespace-nowrap" style="color:{{ $acento }}">{{ $insp->folio }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $insp->fecha_recepcion?->format('d/m/Y') ?? '—' }}</td>
+                        <td class="px-3 py-2 text-gray-600">
+                            @if($insp->articulo)
+                                <span class="font-semibold text-gray-700">{{ $insp->articulo->codigo }}</span>
+                                <span class="text-gray-500"> — {{ Str::limit($insp->articulo->descripcion, 30) }}</span>
+                            @else
+                                <span class="text-gray-400">—</span>
+                            @endif
+                        </td>
+                        <td class="px-3 py-2 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium {{ $insp->estado_badge_class }}">
+                                {{ $insp->estado_texto }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ $insp->created_at->format('d/m/Y') }}</td>
+                        <td class="px-3 py-2 text-right whitespace-nowrap">
+                            <a href="{{ route('inspecciones.show', $insp) }}" class="text-xs font-semibold hover:underline" style="color:{{ $acento }}">Ver</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">Sin inspecciones</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if($recentInsp->hasPages())
+        <div class="px-4 py-3 border-t border-gray-100">
+            {{ $recentInsp->links() }}
+        </div>
+        @endif
+    </div>
+    @endif
+
     @endif
 
     {{-- ══════════════════════════════════════
@@ -537,6 +599,93 @@
         @if($tickets->hasPages())
         <div class="px-4 py-3 border-t border-gray-100">
             {{ $tickets->links() }}
+        </div>
+        @endif
+    </div>
+    @endif
+
+    {{-- ══════════════════════════════════════
+         TAB: INSPECCIONES
+    ══════════════════════════════════════ --}}
+    @if($tab === 'inspeccion')
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                <span class="font-semibold text-sm text-gray-700">Inspecciones de Ingreso</span>
+                <span class="text-xs text-gray-400">({{ $inspecciones->total() }} total)</span>
+            </div>
+            <a href="{{ route('inspecciones.create') }}"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition hover:opacity-90"
+               style="background-color:{{ $acento }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nueva
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            @if($inspecciones->isEmpty())
+            <div class="py-10 text-center text-gray-500 text-sm">No hay inspecciones registradas.</div>
+            @else
+            <table class="w-full text-xs border-collapse" style="min-width:680px;">
+                <thead>
+                    <tr style="background-color:{{ $acento }};">
+                        <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap">Folio</th>
+                        <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap">Recepción</th>
+                        <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Artículo</th>
+                        <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">Requisición</th>
+                        <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide">O.C.</th>
+                        <th class="px-3 py-2 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap">Estado</th>
+                        <th class="px-3 py-2 text-center text-white font-semibold uppercase tracking-wide whitespace-nowrap">Res. Solicitante</th>
+                        <th class="px-3 py-2 text-left text-white font-semibold uppercase tracking-wide whitespace-nowrap">Registrado</th>
+                        <th class="px-3 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($inspecciones as $insp)
+                    <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-indigo-50 transition-colors">
+                        <td class="px-3 py-2 font-mono font-bold whitespace-nowrap" style="color:{{ $acento }}">{{ $insp->folio }}</td>
+                        <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ $insp->fecha_recepcion?->format('d/m/Y') ?? '—' }}</td>
+                        <td class="px-3 py-2 text-gray-600">
+                            @if($insp->articulo)
+                                <span class="font-semibold text-gray-700">{{ $insp->articulo->codigo }}</span>
+                                <span class="text-gray-500"> — {{ Str::limit($insp->articulo->descripcion, 30) }}</span>
+                            @else
+                                <span class="text-gray-400">—</span>
+                            @endif
+                        </td>
+                        <td class="px-3 py-2 text-gray-700">{{ $insp->requisicion ?? '—' }}</td>
+                        <td class="px-3 py-2 text-gray-700">{{ $insp->orden_compra ?? '—' }}</td>
+                        <td class="px-3 py-2 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium {{ $insp->estado_badge_class }}">
+                                {{ $insp->estado_texto }}
+                            </span>
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                            @if($insp->resultado_solicitante)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border {{ $insp->getResultadoBadgeClass($insp->resultado_solicitante) }}">
+                                {{ $insp->resultado_solicitante_text }}
+                            </span>
+                            @else
+                            <span class="text-gray-400">—</span>
+                            @endif
+                        </td>
+                        <td class="px-3 py-2 text-gray-500 whitespace-nowrap">{{ $insp->created_at->format('d/m/Y') }}</td>
+                        <td class="px-3 py-2 text-right whitespace-nowrap">
+                            <a href="{{ route('inspecciones.show', $insp) }}"
+                               class="text-xs font-semibold hover:underline transition"
+                               style="color:{{ $acento }}">Ver</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @endif
+        </div>
+        @if($inspecciones->hasPages())
+        <div class="px-4 py-3 border-t border-gray-100">
+            {{ $inspecciones->links() }}
         </div>
         @endif
     </div>

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Exports\InspeccionIngresoExport;
+use App\Mail\InspeccionCalidadMail;
 use App\Models\InspeccionIngreso;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 
 class InspeccionIngresoController extends Controller
@@ -36,15 +39,19 @@ class InspeccionIngresoController extends Controller
         return view('inspecciones.index', compact('inspecciones'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $user = auth()->user();
-        return view('inspecciones.create', compact('user'));
+        $user     = auth()->user();
+        $articulo = $request->filled('articulo_id')
+            ? \App\Models\Producto::find($request->articulo_id)
+            : null;
+        return view('inspecciones.create', compact('user', 'articulo'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'articulo_id'                  => 'nullable|integer',
             'fecha_recepcion'              => 'nullable|date',
             'requisicion'                  => 'nullable|string|max:100',
             'orden_compra'                 => 'nullable|string|max:100',
@@ -66,11 +73,33 @@ class InspeccionIngresoController extends Controller
             'resultado_calidad'            => 'nullable|in:no_conforme,conforme,a_revision',
         ]);
 
-        $validated['registrado_por']       = auth()->id();
-        $validated['folio']                = InspeccionIngreso::generarFolio();
+        $validated['registrado_por']        = auth()->id();
+        $validated['folio']                 = InspeccionIngreso::generarFolio();
         $validated['requiere_ctrl_calidad'] = $request->boolean('requiere_ctrl_calidad');
 
+        // Si no requiere calidad, limpiar todos sus campos
+        if (!$validated['requiere_ctrl_calidad']) {
+            foreach (['fecha_inspeccion_calidad','inspeccionado_calidad','departamento_calidad','observaciones_calidad','resultado_calidad'] as $campo) {
+                $validated[$campo] = null;
+            }
+        }
+
         $inspeccion = InspeccionIngreso::create($validated);
+
+        // Notificar a usuarios con rol calidad si se requiere control de calidad
+        if ($inspeccion->requiere_ctrl_calidad) {
+            $usuariosCalidad = User::whereHas('roles', fn ($q) => $q->where('name', 'calidad'))
+                ->whereNotNull('email')
+                ->get();
+
+            foreach ($usuariosCalidad as $usuario) {
+                try {
+                    Mail::to($usuario->email)->send(new InspeccionCalidadMail($inspeccion));
+                } catch (\Exception) {
+                    // Continuar aunque falle el envío de algún correo
+                }
+            }
+        }
 
         return redirect()->route('inspecciones.show', $inspeccion)
             ->with('success', 'Inspección registrada con folio ' . $inspeccion->folio . '.');
@@ -89,6 +118,7 @@ class InspeccionIngresoController extends Controller
     public function update(Request $request, InspeccionIngreso $inspeccion)
     {
         $validated = $request->validate([
+            'articulo_id'                  => 'nullable|integer',
             'fecha_recepcion'              => 'nullable|date',
             'requisicion'                  => 'nullable|string|max:100',
             'orden_compra'                 => 'nullable|string|max:100',
@@ -111,6 +141,12 @@ class InspeccionIngresoController extends Controller
         ]);
 
         $validated['requiere_ctrl_calidad'] = $request->boolean('requiere_ctrl_calidad');
+
+        if (!$validated['requiere_ctrl_calidad']) {
+            foreach (['fecha_inspeccion_calidad','inspeccionado_calidad','departamento_calidad','observaciones_calidad','resultado_calidad'] as $campo) {
+                $validated[$campo] = null;
+            }
+        }
 
         $inspeccion->update($validated);
 
