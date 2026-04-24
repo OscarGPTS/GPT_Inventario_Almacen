@@ -6,6 +6,8 @@ use App\Exports\InspeccionIngresoExport;
 use App\Models\InspeccionIngreso;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 
 class InspeccionIngresoController extends Controller
@@ -48,6 +50,7 @@ class InspeccionIngresoController extends Controller
             'orden_compra'                 => 'nullable|string|max:100',
             'tipo_documento'               => 'nullable|in:DN,NP,CP,Otro',
             'tipo_documento_otro'          => 'nullable|string|max:100',
+            'numero_documento'             => 'nullable|string|max:100',
             'requiere_ctrl_calidad'        => 'nullable|boolean',
             'no_solicitud'                 => 'nullable|string|max:100',
             'fecha_ingreso_inventario'     => 'nullable|date',
@@ -91,6 +94,7 @@ class InspeccionIngresoController extends Controller
             'orden_compra'                 => 'nullable|string|max:100',
             'tipo_documento'               => 'nullable|in:DN,NP,CP,Otro',
             'tipo_documento_otro'          => 'nullable|string|max:100',
+            'numero_documento'             => 'nullable|string|max:100',
             'requiere_ctrl_calidad'        => 'nullable|boolean',
             'no_solicitud'                 => 'nullable|string|max:100',
             'fecha_ingreso_inventario'     => 'nullable|date',
@@ -121,6 +125,30 @@ class InspeccionIngresoController extends Controller
 
         return redirect()->route('inspecciones.index')
             ->with('success', 'Inspección ' . $folio . ' eliminada.');
+    }
+
+    public function empleadosRh()
+    {
+        $empleados = Cache::remember('rh_empleados_inspeccion', 300, function () {
+            try {
+                $response = Http::timeout(10)->get('https://services.satechenergy.com/api/rh/users');
+                if (!$response->successful()) return [];
+
+                return collect($response->json('data', []))
+                    ->filter(fn($e) => !empty($e['nombre_completo']))
+                    ->map(fn($e) => [
+                        'nombre'       => $e['nombre_completo'],
+                        'departamento' => $e['departamento']['nombre'] ?? '',
+                    ])
+                    ->sortBy('nombre')
+                    ->values()
+                    ->toArray();
+            } catch (\Exception) {
+                return [];
+            }
+        });
+
+        return response()->json($empleados);
     }
 
     public function descargarExcel(InspeccionIngreso $inspeccion)

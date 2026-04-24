@@ -15,6 +15,7 @@ class InspeccionIngreso extends Model
         'orden_compra',
         'tipo_documento',
         'tipo_documento_otro',
+        'numero_documento',
         'requiere_ctrl_calidad',
         'no_solicitud',
         'fecha_ingreso_inventario',

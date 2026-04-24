@@ -117,6 +117,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Inspecciones de Ingreso (rol calidad + admin)
     Route::get('/inspecciones', [InspeccionIngresoController::class, 'index'])->name('inspecciones.index');
+    Route::get('/inspecciones/empleados-rh', [InspeccionIngresoController::class, 'empleadosRh'])->name('inspecciones.empleados_rh');
     Route::get('/inspecciones/crear', [InspeccionIngresoController::class, 'create'])->name('inspecciones.create');
     Route::post('/inspecciones', [InspeccionIngresoController::class, 'store'])->name('inspecciones.store');
     Route::get('/inspecciones/{inspeccion}', [InspeccionIngresoController::class, 'show'])->name('inspecciones.show');

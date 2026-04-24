@@ -88,19 +88,24 @@
                                value="{{ old('orden_compra', $inspeccion->orden_compra) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition">
                     </div>
-                    <div>
+                    <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">DN / NP / CP / Otro</label>
-                        <select name="tipo_documento" id="tipo_documento"
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 bg-white transition"
-                                onchange="toggleOtro()">
-                            <option value="">— Seleccionar —</option>
-                            @foreach(['DN','NP','CP','Otro'] as $td)
-                            <option value="{{ $td }}" {{ old('tipo_documento', $inspeccion->tipo_documento) === $td ? 'selected' : '' }}>{{ $td }}</option>
-                            @endforeach
-                        </select>
+                        <div class="flex gap-2">
+                            <select name="tipo_documento" id="tipo_documento"
+                                    class="w-28 shrink-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 bg-white transition"
+                                    onchange="toggleOtro()">
+                                <option value="">— Tipo —</option>
+                                @foreach(['DN','NP','CP','Otro'] as $td)
+                                <option value="{{ $td }}" {{ old('tipo_documento', $inspeccion->tipo_documento) === $td ? 'selected' : '' }}>{{ $td }}</option>
+                                @endforeach
+                            </select>
+                            <input type="text" name="numero_documento" id="numero_documento"
+                                   value="{{ old('numero_documento', $inspeccion->numero_documento) }}" placeholder="Número (ej. 39191392)"
+                                   class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition">
+                        </div>
                         <input type="text" name="tipo_documento_otro" id="tipo_documento_otro"
                                value="{{ old('tipo_documento_otro', $inspeccion->tipo_documento_otro) }}"
-                               placeholder="Especificar…"
+                               placeholder="Especificar tipo…"
                                class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 transition
                                       {{ old('tipo_documento', $inspeccion->tipo_documento) === 'Otro' ? '' : 'hidden' }}">
                     </div>
@@ -124,15 +129,25 @@
                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Inspeccionó (Nombre)</label>
-                            <input type="text" name="inspeccionado_solicitante"
-                                   value="{{ old('inspeccionado_solicitante', $inspeccion->inspeccionado_solicitante) }}"
-                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                Inspeccionó (Nombre)
+                                <span id="ac-loading-sol" class="hidden ml-1 text-blue-400 font-normal normal-case">cargando…</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="nombre-sol" name="inspeccionado_solicitante"
+                                       value="{{ old('inspeccionado_solicitante', $inspeccion->inspeccionado_solicitante) }}"
+                                       placeholder="Escriba para buscar empleado…"
+                                       autocomplete="off"
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                                <div id="dropdown-sol"
+                                     class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-52 overflow-y-auto"></div>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Departamento</label>
-                            <input type="text" name="departamento_solicitante"
+                            <input type="text" id="depto-sol" name="departamento_solicitante"
                                    value="{{ old('departamento_solicitante', $inspeccion->departamento_solicitante) }}"
+                                   placeholder="Se llena al seleccionar nombre"
                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
                         </div>
                         <div>
@@ -151,15 +166,25 @@
                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Inspeccionó (Nombre)</label>
-                            <input type="text" name="inspeccionado_calidad"
-                                   value="{{ old('inspeccionado_calidad', $inspeccion->inspeccionado_calidad) }}"
-                                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                Inspeccionó (Nombre)
+                                <span id="ac-loading-cal" class="hidden ml-1 text-green-600 font-normal normal-case">cargando…</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="nombre-cal" name="inspeccionado_calidad"
+                                       value="{{ old('inspeccionado_calidad', $inspeccion->inspeccionado_calidad) }}"
+                                       placeholder="Escriba para buscar empleado…"
+                                       autocomplete="off"
+                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
+                                <div id="dropdown-cal"
+                                     class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-52 overflow-y-auto"></div>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Departamento</label>
-                            <input type="text" name="departamento_calidad"
+                            <input type="text" id="depto-cal" name="departamento_calidad"
                                    value="{{ old('departamento_calidad', $inspeccion->departamento_calidad) }}"
+                                   placeholder="Se llena al seleccionar nombre"
                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition">
                         </div>
                         <div>
@@ -252,6 +277,7 @@
 </div>
 
 <script>
+// ── Tipo documento ─────────────────────────────────────────
 function toggleOtro() {
     const sel   = document.getElementById('tipo_documento');
     const input = document.getElementById('tipo_documento_otro');
@@ -259,5 +285,104 @@ function toggleOtro() {
     input.classList.toggle('hidden', !show);
     if (!show) input.value = '';
 }
+
+// ── Autocomplete empleados RH ───────────────────────────────
+let _empleados = null;
+let _cargando  = false;
+
+async function cargarEmpleados() {
+    if (_empleados !== null || _cargando) return;
+    _cargando = true;
+    document.querySelectorAll('[id^="ac-loading-"]').forEach(el => el.classList.remove('hidden'));
+
+    try {
+        const res  = await fetch('{{ route("inspecciones.empleados_rh") }}');
+        _empleados = res.ok ? await res.json() : [];
+    } catch {
+        _empleados = [];
+    } finally {
+        _cargando = false;
+        document.querySelectorAll('[id^="ac-loading-"]').forEach(el => el.classList.add('hidden'));
+    }
+}
+
+function renderDropdown(dropdownId, matches, inputId, deptoId) {
+    const dd = document.getElementById(dropdownId);
+    if (!matches.length) { dd.classList.add('hidden'); return; }
+
+    dd.innerHTML = matches.map(e => {
+        const nombre = e.nombre.replace(/"/g, '&quot;');
+        const depto  = (e.departamento || '').replace(/"/g, '&quot;');
+        return `<div class="px-3 py-2.5 cursor-pointer hover:bg-indigo-50 border-b border-gray-100 last:border-0 transition-colors"
+                     data-nombre="${nombre}" data-depto="${depto}"
+                     onmousedown="seleccionarEmpleado('${inputId}','${deptoId}','${dropdownId}',this)">
+                    <p class="text-sm font-medium text-gray-800 leading-tight">${e.nombre}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">${e.departamento || '—'}</p>
+                </div>`;
+    }).join('');
+
+    dd.classList.remove('hidden');
+}
+
+function seleccionarEmpleado(inputId, deptoId, dropdownId, el) {
+    document.getElementById(inputId).value = el.dataset.nombre;
+    document.getElementById(deptoId).value = el.dataset.depto;
+    document.getElementById(dropdownId).classList.add('hidden');
+}
+
+function initAutocomplete(inputId, deptoId, dropdownId) {
+    const input    = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+
+    input.addEventListener('focus', cargarEmpleados);
+
+    input.addEventListener('input', function () {
+        if (_empleados === null) { cargarEmpleados(); return; }
+
+        const q = this.value.trim().toLowerCase();
+        if (q.length < 2) { dropdown.classList.add('hidden'); return; }
+
+        const matches = _empleados
+            .filter(e => e.nombre.toLowerCase().includes(q))
+            .slice(0, 10);
+
+        renderDropdown(dropdownId, matches, inputId, deptoId);
+    });
+
+    input.addEventListener('blur', () => {
+        setTimeout(() => dropdown.classList.add('hidden'), 180);
+    });
+
+    input.addEventListener('keydown', function (e) {
+        const items = dropdown.querySelectorAll('[data-nombre]');
+        if (!items.length) return;
+        const active = dropdown.querySelector('.bg-indigo-100');
+        let idx = active ? [...items].indexOf(active) : -1;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (active) active.classList.replace('bg-indigo-100', 'hover:bg-indigo-50');
+            idx = (idx + 1) % items.length;
+            items[idx].classList.add('bg-indigo-100');
+            items[idx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (active) active.classList.replace('bg-indigo-100', 'hover:bg-indigo-50');
+            idx = (idx - 1 + items.length) % items.length;
+            items[idx].classList.add('bg-indigo-100');
+            items[idx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && active) {
+            e.preventDefault();
+            seleccionarEmpleado(inputId, deptoId, dropdownId, active);
+        } else if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initAutocomplete('nombre-sol', 'depto-sol', 'dropdown-sol');
+    initAutocomplete('nombre-cal', 'depto-cal', 'dropdown-cal');
+});
 </script>
 @endsection
